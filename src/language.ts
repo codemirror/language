@@ -3,9 +3,9 @@ import {Tree, SyntaxNode, ChangedRange, TreeFragment, NodeProp, NodeType,
 // NOTE: This package should only use _types_ from "lezer", to avoid
 // pulling in that dependency when no actual Lezer-based parser is used.
 import {Parser, ParserConfig} from "lezer"
-import {Text, TextIterator} from "@codemirror/next/text"
-import {EditorState, StateField, Transaction, Extension, StateEffect, Facet, ChangeDesc} from "@codemirror/next/state"
-import {ViewPlugin, ViewUpdate, EditorView} from "@codemirror/next/view"
+import {Text, TextIterator} from "@codemirror/text"
+import {EditorState, StateField, Transaction, Extension, StateEffect, Facet, ChangeDesc} from "@codemirror/state"
+import {ViewPlugin, ViewUpdate, EditorView} from "@codemirror/view"
 
 /// Node prop stored in a grammar's top syntax node to provide the
 /// facet that stores language data for that language.

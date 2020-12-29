@@ -1,5 +1,5 @@
 import {NodeProp, SyntaxNode} from "lezer-tree"
-import {EditorState, Facet} from "@codemirror/next/state"
+import {EditorState, Facet} from "@codemirror/state"
 import {syntaxTree} from "./language"
 
 /// A facet that registers a code folding service. When called with
