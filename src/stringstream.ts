@@ -1,4 +1,4 @@
-import {countColumn} from "@codemirror/next/text"
+import {countColumn} from "@codemirror/text"
 
 // Counts the column offset in a string, taking tabs into account.
 // Used mostly to find indentation.

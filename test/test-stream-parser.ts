@@ -1,7 +1,7 @@
 import ist from "ist"
-import {StreamLanguage} from "@codemirror/next/stream-parser"
-import {EditorState} from "@codemirror/next/state"
-import {syntaxTree, getIndentation, Language} from "@codemirror/next/language"
+import {StreamLanguage} from "@codemirror/stream-parser"
+import {EditorState} from "@codemirror/state"
+import {syntaxTree, getIndentation, Language} from "@codemirror/language"
 
 let startStates = 0, keywords = ["if", "else", "return"]
 
