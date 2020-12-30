@@ -103,18 +103,7 @@ export class Language {
   }
 
   /// @internal
-  static state: StateField<LanguageState> = StateField.define({
-    create(state) {
-      let parseState = new EditorParseContext(state.facet(language)!.parser, state, [],
-                                              Tree.empty, {from: 0, to: state.doc.length}, [])
-      if (!parseState.work(Work.Apply)) parseState.takeTree()
-      return new LanguageState(parseState)
-    },
-    update(value, tr) {
-      for (let e of tr.effects) if (e.is(Language.setState)) return e.value
-      return value.apply(tr)
-    }
-  })
+  static state: StateField<LanguageState>
 
   /// @internal
   static setState = StateEffect.define<LanguageState>()
@@ -417,7 +406,23 @@ class LanguageState {
     if (!newCx.work(Work.Apply, upto)) newCx.takeTree()
     return new LanguageState(newCx)
   }
+
+  static init(state: EditorState) {
+    let parseState = new EditorParseContext(state.facet(language)!.parser, state, [],
+                                            Tree.empty, {from: 0, to: state.doc.length}, [])
+    if (!parseState.work(Work.Apply)) parseState.takeTree()
+    return new LanguageState(parseState)
+  }
 }
+
+Language.state = StateField.define<LanguageState>({
+  create: LanguageState.init,
+  update(value, tr) {
+    for (let e of tr.effects) if (e.is(Language.setState)) return e.value
+    if (tr.startState.facet(language) != tr.state.facet(language)) return LanguageState.init(tr.state)
+    return value.apply(tr)
+  }
+})
 
 type Deadline = {timeRemaining(): number, didTimeout: boolean}
 type IdleCallback = (deadline?: Deadline) => void
