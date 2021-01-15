@@ -245,7 +245,9 @@ const enum Work {
   // For every change the editor receives while focused, it gets a
   // small bonus to its parsing budget (as a way to allow active
   // editors to continue doing work).
-  ChangeBonus = 50
+  ChangeBonus = 50,
+  // Don't eagerly parse this far beyond the end of the viewport
+  MaxParseAhead = 1e6
 }
 
 /// A parse context provided to parsers working on the editor content.
@@ -276,8 +278,10 @@ export class EditorParseContext implements ParseContext {
 
   /// @internal
   work(time: number, upto?: number) {
-    if (this.tree != Tree.empty && (upto == null ? this.tree.length == this.state.doc.length : this.tree.length >= upto))
+    if (this.tree != Tree.empty && (upto == null ? this.tree.length == this.state.doc.length : this.tree.length >= upto)) {
+      this.takeTree()
       return true
+    }
     if (!this.parse)
       this.parse = this.parser.startParse(new DocInput(this.state.doc), 0, this)
     let endTime = Date.now() + time
@@ -478,18 +482,16 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
     }
     if (this.chunkBudget <= 0) return // No more budget
 
-    let {state} = this.view, field = state.field(Language.state)
-    if (field.tree.length >= state.doc.length) return
+    let {state, viewport: {to: vpTo}} = this.view, field = state.field(Language.state)
+    if (field.tree.length >= vpTo + Work.MaxParseAhead) return
     let time = Math.min(this.chunkBudget, deadline ? Math.max(Work.MinSlice, deadline.timeRemaining()) : Work.Slice)
-    field.context.work(time)
+    let done = field.context.work(time, vpTo + Work.MaxParseAhead)
     this.chunkBudget -= Date.now() - now
-    let done = field.context.tree.length >= state.doc.length
-    if (done || this.chunkBudget <= 0 || field.context.movedPast(this.view.viewport.to)) {
+    if (done || this.chunkBudget <= 0 || field.context.movedPast(vpTo)) {
       field.context.takeTree()
       this.view.dispatch({effects: Language.setState.of(new LanguageState(field.context))})
-    } else {
-      this.scheduleWork()
     }
+    if (!done && this.chunkBudget > 0) this.scheduleWork()
   }
 
   destroy() {
