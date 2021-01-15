@@ -1,3 +1,11 @@
+## 0.17.3 (2021-01-15)
+
+### Bug fixes
+
+Parse scheduling has been improved to reduce the likelyhood of the user looking at unparsed code in big documents.
+
+Prevent parser from running too far past the current viewport in huge documents.
+
 ## 0.17.2 (2021-01-06)
 
 ### New features
