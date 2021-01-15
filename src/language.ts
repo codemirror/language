@@ -376,6 +376,11 @@ export class EditorParseContext implements ParseContext {
       }
     }
   }
+
+  /// @internal
+  movedPast(pos: number) {
+    return this.tree.length < pos && this.parse && this.parse.pos >= pos
+  }
 }
 
 function cutFragments(fragments: readonly TreeFragment[], from: number, to: number) {
@@ -445,13 +450,13 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
   }
 
   update(update: ViewUpdate) {
+    if (update.viewportChanged) {
+      let cx = this.view.state.field(Language.state).context
+      if (cx.updateViewport(update.view.viewport)) cx.reset()
+      if (this.view.viewport.to > cx.tree.length) this.scheduleWork()
+    }
     if (update.docChanged) {
       if (this.view.hasFocus) this.chunkBudget += Work.ChangeBonus
-      this.scheduleWork()
-    }
-    let cx = this.view.state.field(Language.state).context
-    if (update.viewportChanged && cx.updateViewport(update.view.viewport)) {
-      cx.reset()
       this.scheduleWork()
     }
   }
@@ -467,7 +472,7 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
     this.working = -1
 
     let now = Date.now()
-    if (this.chunkEnd < now && this.view.hasFocus) { // Start a new chunk
+    if (this.chunkEnd < now && (this.chunkEnd < 0 || this.view.hasFocus)) { // Start a new chunk
       this.chunkEnd = now + Work.ChunkTime
       this.chunkBudget = Work.ChunkBudget
     }
@@ -478,7 +483,9 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
     let time = Math.min(this.chunkBudget, deadline ? Math.max(Work.MinSlice, deadline.timeRemaining()) : Work.Slice)
     field.context.work(time)
     this.chunkBudget -= Date.now() - now
-    if (field.context.tree.length >= state.doc.length) {
+    let done = field.context.tree.length >= state.doc.length
+    if (done || this.chunkBudget <= 0 || field.context.movedPast(this.view.viewport.to)) {
+      field.context.takeTree()
       this.view.dispatch({effects: Language.setState.of(new LanguageState(field.context))})
     } else {
       this.scheduleWork()
