@@ -57,7 +57,7 @@ const foldState = StateField.define<DecorationSet>({
 function foldInside(state: EditorState, from: number, to: number) {
   let found: {from: number, to: number} | null = null
   state.field(foldState, false)?.between(from, to, (from, to) => {
-    if (!found || found.from > from) found = ({from, to})
+    if (!found || found.from > from) found = {from, to}
   })
   return found
 }
@@ -77,7 +77,7 @@ export const foldCode: Command = view => {
   for (let line of selectedLines(view)) {
     let range = foldable(view.state, line.from, line.to)
     if (range) {
-      view.dispatch({effects: foldEffect.of(range),
+      view.dispatch({effects: [foldEffect.of(range), announceFold(view, range)],
                      reconfigure: maybeEnable(view.state)})
       return true
     }
@@ -91,10 +91,16 @@ export const unfoldCode: Command = view => {
   let effects = []
   for (let line of selectedLines(view)) {
     let folded = foldInside(view.state, line.from, line.to)
-    if (folded) effects.push(unfoldEffect.of(folded))
+    if (folded) effects.push(unfoldEffect.of(folded), announceFold(view, folded, false))
   }
   if (effects.length) view.dispatch({effects})
   return effects.length > 0
+}
+
+function announceFold(view: EditorView, range: {from: number, to: number}, fold = true) {
+  let lineFrom = view.state.doc.lineAt(range.from).number, lineTo = view.state.doc.lineAt(range.to).number
+  return EditorView.announce.of(`${view.state.phrase(fold ? "Folded lines" : "Unfolded lines")} ${lineFrom} ${
+    view.state.phrase("to")} ${lineTo}.`)
 }
 
 /// Fold all top-level foldable ranges.
