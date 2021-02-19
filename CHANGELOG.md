@@ -1,3 +1,9 @@
+## 0.17.5 (2021-02-19)
+
+### New features
+
+This package now exports a `foldInside` helper function, a fold function that should work for most delimited node types.
+
 ## 0.17.4 (2021-01-15)
 
 ## 0.17.3 (2021-01-15)
