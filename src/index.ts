@@ -4,4 +4,4 @@ export {language, Language, LezerLanguage, defineLanguageFacet, syntaxTree, ensu
 export {IndentContext, getIndentUnit, indentString, indentOnInput, indentService, getIndentation, indentUnit,
         TreeIndentContext, indentNodeProp, delimitedIndent, continuedIndent, flatIndent} from "./indent"
 
-export {foldService, foldNodeProp, foldable} from "./fold"
+export {foldService, foldNodeProp, foldInside, foldable} from "./fold"

@@ -24,6 +24,8 @@
 
 @foldNodeProp
 
+@foldInside
+
 @foldable
 
 ### Indentation

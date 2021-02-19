@@ -14,6 +14,14 @@ export const foldService = Facet.define<(state: EditorState, lineStart: number, 
 /// when it is.
 export const foldNodeProp = new NodeProp<(node: SyntaxNode, state: EditorState) => ({from: number, to: number} | null)>()
 
+/// [Fold](#language.foldNodeProp) function that folds everything but
+/// the first and the last child of a syntax node. Useful for nodes
+/// that start and end with delimiters.
+export function foldInside(node: SyntaxNode): {from: number, to: number} | null {
+  let first = node.firstChild, last = node.lastChild
+  return first && first.to < last!.from ? {from: first.to, to: last!.type.isError ? node.to : last!.from} : null
+}
+
 function syntaxFolding(state: EditorState, start: number, end: number) {
   let tree = syntaxTree(state)
   if (tree.length == 0) return null
