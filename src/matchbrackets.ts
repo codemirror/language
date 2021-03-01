@@ -1,6 +1,6 @@
 import {combineConfig, EditorState, Facet, StateField, Extension} from "@codemirror/state"
 import {syntaxTree} from "@codemirror/language"
-import {EditorView, themeClass} from "@codemirror/view"
+import {EditorView} from "@codemirror/view"
 import {Decoration, DecorationSet} from "@codemirror/view"
 import {Tree, SyntaxNode, NodeType, NodeProp} from "lezer-tree"
 
@@ -22,8 +22,8 @@ export interface Config {
 }
 
 const baseTheme = EditorView.baseTheme({
-  $matchingBracket: {color: "#0b0"},
-  $nonmatchingBracket: {color: "#a22"}
+  ".cm-matchingBracket": {color: "#0b0"},
+  ".cm-nonmatchingBracket": {color: "#a22"}
 })
 
 const DefaultScanDist = 10000, DefaultBrackets = "()[]{}"
@@ -38,8 +38,8 @@ const bracketMatchingConfig = Facet.define<Config, Required<Config>>({
   }
 })
 
-const matchingMark = Decoration.mark({class: themeClass("matchingBracket")}),
-      nonmatchingMark = Decoration.mark({class: themeClass("nonmatchingBracket")})
+const matchingMark = Decoration.mark({class: "cm-matchingBracket"}),
+      nonmatchingMark = Decoration.mark({class: "cm-nonmatchingBracket"})
 
 const bracketMatchingState = StateField.define<DecorationSet>({
   create() { return Decoration.none },
