@@ -1,5 +1,4 @@
-import {combineConfig, EditorState, StateEffect, ChangeDesc, Facet,
-        StateField, Extension} from "@codemirror/state"
+import {combineConfig, EditorState, StateEffect, ChangeDesc, Facet, StateField, Extension} from "@codemirror/state"
 import {EditorView, BlockInfo, Command, Decoration, DecorationSet, WidgetType, themeClass,
         KeyBinding, ViewPlugin, ViewUpdate} from "@codemirror/view"
 import {foldable} from "@codemirror/language"
@@ -68,8 +67,8 @@ function foldExists(folded: DecorationSet, from: number, to: number) {
   return found
 }
 
-function maybeEnable(state: EditorState) {
-  return state.field(foldState, false) ? undefined : {append: codeFolding()}
+function maybeEnable(state: EditorState, other: readonly StateEffect<unknown>[]) {
+  return state.field(foldState, false) ? other : other.concat(StateEffect.appendConfig.of(codeFolding()))
 }
 
 /// Fold the lines that are selected, if possible.
@@ -77,8 +76,7 @@ export const foldCode: Command = view => {
   for (let line of selectedLines(view)) {
     let range = foldable(view.state, line.from, line.to)
     if (range) {
-      view.dispatch({effects: [foldEffect.of(range), announceFold(view, range)],
-                     reconfigure: maybeEnable(view.state)})
+      view.dispatch({effects: maybeEnable(view.state, [foldEffect.of(range), announceFold(view, range)])})
       return true
     }
   }
@@ -111,7 +109,7 @@ export const foldAll: Command = view => {
     if (range) effects.push(foldEffect.of(range))
     pos = (range ? view.visualLineAt(range.to) : line).to + 1
   }
-  if (effects.length) view.dispatch({effects, reconfigure: maybeEnable(view.state)})
+  if (effects.length) view.dispatch({effects: maybeEnable(view.state, effects)})
   return !!effects.length
 }
 
