@@ -1,5 +1,5 @@
 import {combineConfig, EditorState, StateEffect, ChangeDesc, Facet, StateField, Extension} from "@codemirror/state"
-import {EditorView, BlockInfo, Command, Decoration, DecorationSet, WidgetType, themeClass,
+import {EditorView, BlockInfo, Command, Decoration, DecorationSet, WidgetType,
         KeyBinding, ViewPlugin, ViewUpdate} from "@codemirror/view"
 import {foldable} from "@codemirror/language"
 import {gutter, GutterMarker} from "@codemirror/gutter"
@@ -142,7 +142,7 @@ interface FoldConfig {
   /// option will be used instead.
   placeholderDOM?: (() => HTMLElement) | null,
   /// Text to use as placeholder for folded text. Defaults to `"…"`.
-  /// Will be styled with the `$foldPlaceholder` theme class.
+  /// Will be styled with the `"cm-foldPlaceholder"` class.
   placeholderText?: string
 }
 
@@ -172,7 +172,7 @@ const foldWidget = Decoration.replace({widget: new class extends WidgetType {
     element.textContent = conf.placeholderText
     element.setAttribute("aria-label", state.phrase("folded code"))
     element.title = state.phrase("unfold")
-    element.className = themeClass("foldPlaceholder")
+    element.className = "cm-foldPlaceholder"
 
     element.onclick = event => {
       let line = view.visualLineAt(view.posAtDOM(event.target as HTMLElement))
@@ -258,7 +258,7 @@ export function foldGutter(config: FoldGutterConfig = {}): Extension {
   return [
     markers,
     gutter({
-      style: "foldGutter",
+      class: "cm-foldGutter",
       markers(view) { return view.plugin(markers)?.markers || RangeSet.empty },
       initialSpacer() {
         return new FoldMarker(fullConfig, false)
@@ -284,7 +284,7 @@ export function foldGutter(config: FoldGutterConfig = {}): Extension {
 }
 
 const baseTheme = EditorView.baseTheme({
-  $foldPlaceholder: {
+  ".cm-foldPlaceholder": {
     backgroundColor: "#eee",
     border: "1px solid #ddd",
     color: "#888",
@@ -294,7 +294,7 @@ const baseTheme = EditorView.baseTheme({
     cursor: "pointer"
   },
 
-  "$gutterElement.foldGutter": {
+  ".cm-foldGutter .cm-gutterElement": {
     padding: "0 1px",
     cursor: "pointer"
   }
