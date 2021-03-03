@@ -2,6 +2,10 @@
 
 ### Breaking changes
 
+Update dependencies to 0.18.
+
+### Breaking changes
+
 The `Language` constructor takes an additional argument that provides the top node type.
 
 ### New features
