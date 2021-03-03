@@ -154,11 +154,7 @@ function syntaxIndentation(cx: IndentContext, ast: Tree, pos: number) {
     }
   }
 
-  for (; tree; tree = tree.parent) {
-    let strategy = indentStrategy(tree)
-    if (strategy) return strategy(new TreeIndentContext(cx, pos, tree))
-  }
-  return null
+  return indentFrom(tree, pos, cx)
 }
 
 function ignoreClosed(cx: TreeIndentContext) {
@@ -176,6 +172,15 @@ function indentStrategy(tree: SyntaxNode): ((context: TreeIndentContext) => numb
   return tree.parent == null ? topIndent : null
 }
 
+function indentFrom(node: SyntaxNode | null, pos: number, base: IndentContext) {
+  for (; node; node = node.parent) {
+    let strategy = indentStrategy(node)
+    if (strategy) return strategy(new TreeIndentContext(base, pos, node))
+  }
+  return null
+}
+
+
 function topIndent() { return 0 }
 
 /// Objects of this type provide context information and helper
@@ -183,7 +188,7 @@ function topIndent() { return 0 }
 export class TreeIndentContext extends IndentContext {
   /// @internal
   constructor(
-    base: IndentContext,
+    private base: IndentContext,
     /// The position at which indentation is being computed.
     readonly pos: number,
     /// The syntax tree node to which the indentation strategy
@@ -213,6 +218,13 @@ export class TreeIndentContext extends IndentContext {
       line = this.state.doc.lineAt(atBreak.from)
     }
     return this.lineIndent(line)
+  }
+
+  /// Continue looking for indentations in the node's parent nodes,
+  /// and return the result of that.
+  continue() {
+    let parent = this.node.parent
+    return parent ? indentFrom(parent, this.pos, this.base) : 0
   }
 }
 
