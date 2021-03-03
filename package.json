@@ -29,7 +29,7 @@
     "@codemirror/state": "^0.17.0",
     "@codemirror/text": "^0.17.0",
     "@codemirror/view": "^0.17.0",
-    "lezer": "^0.13.0",
+    "lezer": "^0.13.4",
     "lezer-tree": "^0.13.0"
   },
   "devDependencies": {

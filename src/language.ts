@@ -47,6 +47,8 @@ export class Language {
     /// facet used for this language.
     readonly data: Facet<{[name: string]: any}>,
     parser: {startParse(input: Input, pos: number, context: EditorParseContext): PartialParse},
+    /// The node type of the top node of trees produced by this parser.
+    readonly topNode: NodeType,
     extraExtensions: Extension[] = []
   ) {
     // Kludge to define EditorState.tree as a debugging helper,
@@ -129,7 +131,7 @@ function languageDataFacetAt(state: EditorState, pos: number) {
 export class LezerLanguage extends Language {
   private constructor(data: Facet<{[name: string]: any}>,
                       readonly parser: Parser) {
-    super(data, parser)
+    super(data, parser, parser.topNode)
   }
 
   /// Define a language from a parser.
