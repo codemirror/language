@@ -30,7 +30,7 @@ const language = StreamLanguage.define<{count: number}>({
 describe("StreamLanguage", () => {
   it("can parse content", () => {
     ist(language.parseString("if (x) return 500").toString(),
-        "document(keyword,punctuation,variableName,punctuation,keyword,number)")
+        "Document(keyword,punctuation,variableName,punctuation,keyword,number)")
   })
 
   it("can reuse state on updates", () => {
@@ -69,7 +69,7 @@ describe("StreamLanguage", () => {
     setViewport(state, 4000, 8000)
     state = state.update({changes: {from: 3000, insert: line.repeat(10000)}}).state
     // No nodes in the skipped range
-    ist(syntaxTree(state).resolve(10000, 1).name, "document")
+    ist(syntaxTree(state).resolve(10000, 1).name, "Document")
     // But the viewport is populated
     ist(syntaxTree(state).resolve(805000, 1).name, "number")
     let treeSize = 0
@@ -79,7 +79,7 @@ describe("StreamLanguage", () => {
     setViewport(state, 4000, 8000)
     state = state.update({changes: {from: 100000, insert: "?"}}).state
     ist(syntaxTree(state).resolve(5000, 1).name, "number")
-    ist(syntaxTree(state).resolve(50000, 1).name, "document")
+    ist(syntaxTree(state).resolve(50000, 1).name, "Document")
   })
 
   it("doesn't parse beyond the viewport", () => {
@@ -88,6 +88,6 @@ describe("StreamLanguage", () => {
     setViewport(state, 0, 4000)
     state = state.update({changes: {from: 5000, insert: line.repeat(100)}}).state
     ist(syntaxTree(state).resolve(2000, 1).name, "number")
-    ist(syntaxTree(state).resolve(6000, 1).name, "document")
+    ist(syntaxTree(state).resolve(6000, 1).name, "Document")
   })
 })

@@ -67,17 +67,14 @@ export class StreamLanguage<State> extends Language {
   /// @internal
   streamParser: Required<StreamParser<State>>
   /// @internal
-  docType: number
-  /// @internal
   stateAfter: WeakMap<Tree, State>
 
   private constructor(parser: StreamParser<State>) {
     let data = defineLanguageFacet(parser.languageData)
     let p = fullParser(parser)
     let startParse = (input: Input, startPos: number, context: EditorParseContext) => new Parse(this, input, startPos, context)
-    super(data, {startParse}, [indentService.of((cx, pos) => this.getIndent(cx, pos))])
+    super(data, {startParse}, docID(data), [indentService.of((cx, pos) => this.getIndent(cx, pos))])
     this.streamParser = p
-    this.docType = docID(data)
     this.stateAfter = new WeakMap
   }
 
@@ -85,7 +82,7 @@ export class StreamLanguage<State> extends Language {
 
   private getIndent(cx: IndentContext, pos: number) {
     let tree = syntaxTree(cx.state), at: SyntaxNode | null = tree.resolve(pos)
-    while (at && at.type != typeArray[this.docType]) at = at.parent
+    while (at && at.type != this.topNode) at = at.parent
     if (!at) return null
     let start = findState(this, tree, 0, at.from, pos), statePos, state
     if (start) { state = start.state; statePos = start.pos + 1 }
@@ -125,7 +122,7 @@ function findState<State>(
 
 function cutTree(lang: StreamLanguage<unknown>, tree: Tree, from: number, to: number, inside: boolean): Tree | null {
   if (inside && from <= 0 && to >= tree.length) return tree
-  if (!inside && tree.type == typeArray[lang.docType]) inside = true
+  if (!inside && tree.type == lang.topNode) inside = true
   for (let i = tree.children.length - 1; i >= 0; i--) {
     let pos = tree.positions[i] + from, child = tree.children[i], inner
     if (pos < to && child instanceof Tree) {
@@ -221,7 +218,7 @@ class Parse<State> implements PartialParse {
   }
 
   finish() {
-    return new Tree(typeArray[this.lang.docType], this.chunks, this.chunkPos, this.pos - this.startPos).balance()
+    return new Tree(this.lang.topNode, this.chunks, this.chunkPos, this.pos - this.startPos).balance()
   }
 
   forceFinish() {
@@ -295,7 +292,7 @@ function createTokenType(tagStr: string) {
 }
 
 function docID(data: Facet<{[name: string]: any}>) {
-  let id = typeArray.length
-  typeArray.push(new (NodeType as any)("document", languageDataProp.set(Object.create(null), data), id))
-  return id
+  let type = NodeType.define({id: typeArray.length, name: "Document", props: [languageDataProp.add(() => data)]})
+  typeArray.push(type)
+  return type
 }
