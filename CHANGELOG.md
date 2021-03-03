@@ -1,3 +1,15 @@
+## 0.18.0 (2021-03-03)
+
+### Breaking changes
+
+The `Language` constructor takes an additional argument that provides the top node type.
+
+### New features
+
+`Language` instances now have a `topNode` property giving their top node type.
+
+`TreeIndentContext` now has a `continue` method that allows an indenter to defer to the indentation of the parent nodes.
+
 ## 0.17.5 (2021-02-19)
 
 ### New features
