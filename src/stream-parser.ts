@@ -180,7 +180,7 @@ class Parse<State> implements PartialParse {
     let end = Math.min(this.context.viewport.to, this.input.length, this.chunkStart + C.ChunkSize)
     while (this.pos < end) this.parseLine()
     if (this.chunkStart < this.pos) this.finishChunk()
-    if (this.pos < this.context.viewport.to) return null
+    if (end < this.input.length && this.pos < this.context.viewport.to) return null
     this.context.skipUntilInView(this.pos, this.input.length)
     return this.finish()
   }
