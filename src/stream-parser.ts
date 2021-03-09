@@ -167,7 +167,7 @@ class Parse<State> implements PartialParse {
     this.pos = this.chunkStart = startPos + tree.length
     if (tree.length) {
       this.chunks.push(tree)
-      this.chunkPos.push(startPos)
+      this.chunkPos.push(0)
     }
     if (this.pos < context.viewport.from - C.MaxDistanceBeforeViewport) {
       this.state = this.lang.streamParser.startState(getIndentUnit(context.state))
@@ -177,7 +177,7 @@ class Parse<State> implements PartialParse {
   }
 
   advance() {
-    let end = Math.min(this.context.viewport.to, this.chunkStart + C.ChunkSize)
+    let end = Math.min(this.context.viewport.to, this.input.length, this.chunkStart + C.ChunkSize)
     while (this.pos < end) this.parseLine()
     if (this.chunkStart < this.pos) this.finishChunk()
     if (this.pos < this.context.viewport.to) return null
@@ -212,7 +212,7 @@ class Parse<State> implements PartialParse {
     })
     this.lang.stateAfter.set(tree, this.lang.streamParser.copyState(this.state))
     this.chunks.push(tree)
-    this.chunkPos.push(this.chunkStart)
+    this.chunkPos.push(this.chunkStart - this.startPos)
     this.chunk = []
     this.chunkStart = this.pos
   }
