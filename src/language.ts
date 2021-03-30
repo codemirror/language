@@ -213,7 +213,7 @@ class DocInput implements Input {
     let stringStart = this.cursorPos - this.string.length
     if (pos < stringStart || pos >= this.cursorPos)
       stringStart = this.syncTo(pos)
-    return this.cursor.lineBreak ? "" : this.string.slice(pos - stringStart)
+    return this.cursor.lineBreak ? "" : this.string.slice(pos - stringStart, Math.min(this.length - stringStart, this.string.length))
   }
 
   read(from: number, to: number) {
