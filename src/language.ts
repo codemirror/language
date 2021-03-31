@@ -98,7 +98,7 @@ export class Language {
     let doc = Text.of(code.split("\n"))
     let parse = this.parser.startParse(new DocInput(doc), 0,
                                        new EditorParseContext(this.parser, EditorState.create({doc}), [],
-                                                              Tree.empty, {from: 0, to: code.length}, []))
+                                                              Tree.empty, {from: 0, to: code.length}, [], null))
     let tree
     while (!(tree = parse.advance())) {}
     return tree
@@ -275,7 +275,11 @@ export class EditorParseContext implements ParseContext {
     /// skipped region becomes visible).
     public viewport: {from: number, to: number},
     /// @internal
-    public skipped: {from: number, to: number}[]
+    public skipped: {from: number, to: number}[],
+    /// This is where skipping parsers can register a promise that,
+    /// when resolved, will schedule a new parse. It is cleared when
+    /// the parse worker picks up the promise. @internal
+    public scheduleOn: Promise<unknown> | null
   ) {}
 
   /// @internal
@@ -334,7 +338,7 @@ export class EditorParseContext implements ParseContext {
         }
       }
     }
-    return new EditorParseContext(this.parser, newState, fragments, tree, viewport, skipped)
+    return new EditorParseContext(this.parser, newState, fragments, tree, viewport, skipped, this.scheduleOn)
   }
 
   /// @internal
@@ -366,22 +370,33 @@ export class EditorParseContext implements ParseContext {
     this.skipped.push({from, to})
   }
 
-  /// A parser intended to be used as placeholder when asynchronously
-  /// loading a nested parser. It'll skip its input and mark it as
-  /// not-really-parsed, so that the next update will parse it again.
-  static skippingParser = {
-    startParse(input: Input, startPos: number, context: ParseContext): PartialParse {
-      return {
-        pos: startPos,
-        advance() {
-          ;(context as EditorParseContext).tempSkipped.push({from: startPos, to: input.length})
-          this.pos = input.length
-          return new Tree(NodeType.none, [], [], input.length - startPos)
-        },
-        forceFinish() { return this.advance() as Tree }
+  /// Returns a parser intended to be used as placeholder when
+  /// asynchronously loading a nested parser. It'll skip its input and
+  /// mark it as not-really-parsed, so that the next update will parse
+  /// it again.
+  ///
+  /// When `until` is given, a reparse will be scheduled when that
+  /// promise resolves.
+  static getSkippingParser(until?: Promise<unknown>) {
+    return {
+      startParse(input: Input, startPos: number, context: ParseContext): PartialParse {
+        return {
+          pos: startPos,
+          advance() {
+            let ecx = context as EditorParseContext
+            ecx.tempSkipped.push({from: startPos, to: input.length})
+            if (until) ecx.scheduleOn = ecx.scheduleOn ? Promise.all([ecx.scheduleOn, until]) : until
+            this.pos = input.length
+            return new Tree(NodeType.none, [], [], input.length - startPos)
+          },
+          forceFinish() { return this.advance() as Tree }
+        }
       }
     }
   }
+
+  /// FIXME backwards compatible shim, remove on next major @internal
+  static skippingParser = EditorParseContext.getSkippingParser()
 
   /// @internal
   movedPast(pos: number) {
@@ -420,7 +435,7 @@ class LanguageState {
 
   static init(state: EditorState) {
     let parseState = new EditorParseContext(state.facet(language)!.parser, state, [],
-                                            Tree.empty, {from: 0, to: state.doc.length}, [])
+                                            Tree.empty, {from: 0, to: state.doc.length}, [], null)
     if (!parseState.work(Work.Apply)) parseState.takeTree()
     return new LanguageState(parseState)
   }
@@ -456,8 +471,8 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
   }
 
   update(update: ViewUpdate) {
+    let cx = this.view.state.field(Language.state).context
     if (update.viewportChanged) {
-      let cx = this.view.state.field(Language.state).context
       if (cx.updateViewport(update.view.viewport)) cx.reset()
       if (this.view.viewport.to > cx.tree.length) this.scheduleWork()
     }
@@ -465,12 +480,13 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
       if (this.view.hasFocus) this.chunkBudget += Work.ChangeBonus
       this.scheduleWork()
     }
+    this.checkAsyncSchedule(cx)
   }
 
-  scheduleWork() {
+  scheduleWork(force = false) {
     if (this.working > -1) return
     let {state} = this.view, field = state.field(Language.state)
-    if (field.tree.length >= state.doc.length) return
+    if (!force && field.tree.length >= state.doc.length) return
     this.working = requestIdle(this.work, {timeout: Work.Pause})
   }
 
@@ -494,6 +510,14 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
       this.view.dispatch({effects: Language.setState.of(new LanguageState(field.context))})
     }
     if (!done && this.chunkBudget > 0) this.scheduleWork()
+    this.checkAsyncSchedule(field.context)
+  }
+
+  checkAsyncSchedule(cx: EditorParseContext) {
+    if (cx.scheduleOn) {
+      cx.scheduleOn.then(() => this.scheduleWork(true))
+      cx.scheduleOn = null
+    }
   }
 
   destroy() {
