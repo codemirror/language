@@ -1,3 +1,13 @@
+## 0.18.1 (2021-03-31)
+
+### Breaking changes
+
+`EditorParseContext.getSkippingParser` now replaces `EditorParseContext.skippingParser` and allows you to provide a promise that'll cause parsing to start again. (The old property remains available until the next major release.)
+
+### Bug fixes
+
+Fix an issue where nested parsers could see past the end of the nested region.
+
 ## 0.18.0 (2021-03-03)
 
 ### Breaking changes
