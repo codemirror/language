@@ -13,7 +13,7 @@ for (let l0 = lines.length, i = l0; i < 5000; i++) lines[i] = lines[i % l0]
 let doc = Text.of(lines)
 
 function pContext(doc: Text) {
-  return new EditorParseContext(parser, EditorState.create({doc}), [], Tree.empty, {from: 0, to: doc.length}, [])
+  return new EditorParseContext(parser, EditorState.create({doc}), [], Tree.empty, {from: 0, to: doc.length}, [], null)
 }
 
 describe("EditorParseContext", () => {
