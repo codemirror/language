@@ -1,7 +1,7 @@
 import {combineConfig, EditorState, StateEffect, ChangeDesc, Facet, StateField, Extension} from "@codemirror/state"
 import {EditorView, BlockInfo, Command, Decoration, DecorationSet, WidgetType,
         KeyBinding, ViewPlugin, ViewUpdate} from "@codemirror/view"
-import {foldable} from "@codemirror/language"
+import {foldable, language} from "@codemirror/language"
 import {gutter, GutterMarker} from "@codemirror/gutter"
 import {Range, RangeSet} from "@codemirror/rangeset"
 
@@ -222,26 +222,30 @@ export function foldGutter(config: FoldGutterConfig = {}): Extension {
   let markers = ViewPlugin.fromClass(class {
     markers: RangeSet<FoldMarker>
     from: number
+
     constructor(view: EditorView) {
       this.from = view.viewport.from
       this.markers = RangeSet.of(this.buildMarkers(view))
     }
+
     update(update: ViewUpdate) {
       let firstChange = -1
       update.changes.iterChangedRanges(from => { if (firstChange < 0) firstChange = from })
-      let foldChange = update.startState.field(foldState, false) != update.state.field(foldState, false)
-      if (!foldChange && update.docChanged && update.view.viewport.from == this.from && firstChange > this.from) {
+      let changed = update.startState.facet(language) != update.state.facet(language) ||
+        update.startState.field(foldState, false) != update.state.field(foldState, false)
+      if (!changed && update.docChanged && update.view.viewport.from == this.from && firstChange > this.from) {
         let start = update.view.visualLineAt(firstChange).from
         this.markers = this.markers.update({
           filter: () => false,
           filterFrom: start,
           add: this.buildMarkers(update.view, start)
         })
-      } else if (foldChange || update.docChanged || update.viewportChanged) {
+      } else if (changed || update.docChanged || update.viewportChanged) {
         this.from = update.view.viewport.from
         this.markers = RangeSet.of(this.buildMarkers(update.view))
       }
     }
+
     buildMarkers(view: EditorView, from = 0) {
       let ranges: Range<FoldMarker>[] = []
       view.viewportLines(line => {
