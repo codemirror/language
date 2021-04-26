@@ -3,7 +3,7 @@
   "version": "0.18.1",
   "description": "Language support infrastructure for the CodeMirror code editor",
   "scripts": {
-    "test": "mocha test/test-*.js",
+    "test": "cm-runtests",
     "prepare": "cm-buildhelper src/index.ts"
   },
   "keywords": [
@@ -33,11 +33,8 @@
     "lezer-tree": "^0.13.0"
   },
   "devDependencies": {
-    "@codemirror/buildhelper": "^0.1.0",
-    "@types/mocha": "^5.2.0",
-    "ist": "^1.1.6",
-    "lezer-javascript": "^0.13.0",
-    "mocha": "^7.1.1"
+    "@codemirror/buildhelper": "^0.1.5",
+    "lezer-javascript": "^0.13.0"
   },
   "repository": {
     "type": "git",
