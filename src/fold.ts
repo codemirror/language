@@ -3,7 +3,7 @@ import {EditorView, BlockInfo, Command, Decoration, DecorationSet, WidgetType,
         KeyBinding, ViewPlugin, ViewUpdate} from "@codemirror/view"
 import {foldable, language} from "@codemirror/language"
 import {gutter, GutterMarker} from "@codemirror/gutter"
-import {Range, RangeSet} from "@codemirror/rangeset"
+import {RangeSet, RangeSetBuilder} from "@codemirror/rangeset"
 
 type DocRange = {from: number, to: number}
 
@@ -225,37 +225,24 @@ export function foldGutter(config: FoldGutterConfig = {}): Extension {
 
     constructor(view: EditorView) {
       this.from = view.viewport.from
-      this.markers = RangeSet.of(this.buildMarkers(view))
+      this.markers = this.buildMarkers(view)
     }
 
     update(update: ViewUpdate) {
-      let firstChange = -1
-      update.changes.iterChangedRanges(from => { if (firstChange < 0) firstChange = from })
-      let changed = update.startState.facet(language) != update.state.facet(language) ||
-        update.startState.field(foldState, false) != update.state.field(foldState, false)
-      if (!changed && update.docChanged && update.view.viewport.from == this.from && firstChange > this.from) {
-        let start = update.view.visualLineAt(firstChange).from
-        this.markers = this.markers.update({
-          filter: () => false,
-          filterFrom: start,
-          add: this.buildMarkers(update.view, start)
-        })
-      } else if (changed || update.docChanged || update.viewportChanged) {
-        this.from = update.view.viewport.from
-        this.markers = RangeSet.of(this.buildMarkers(update.view))
-      }
+      if (update.docChanged || update.viewportChanged ||
+          update.startState.facet(language) != update.state.facet(language) ||
+          update.startState.field(foldState, false) != update.state.field(foldState, false))
+        this.markers = this.buildMarkers(update.view)
     }
 
-    buildMarkers(view: EditorView, from = 0) {
-      let ranges: Range<FoldMarker>[] = []
+    buildMarkers(view: EditorView) {
+      let builder = new RangeSetBuilder<FoldMarker>()
       view.viewportLines(line => {
-        if (line.from >= from) {
-          let mark = foldInside(view.state, line.from, line.to) ? canUnfold
-            : foldable(view.state, line.from, line.to) ? canFold : null
-          if (mark) ranges.push(mark.range(line.from))
-        }
+        let mark = foldInside(view.state, line.from, line.to) ? canUnfold
+          : foldable(view.state, line.from, line.to) ? canFold : null
+        if (mark) builder.add(line.from, line.from, mark)
       })
-      return ranges
+      return builder.finish()
     }
   })
 
