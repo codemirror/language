@@ -12,8 +12,15 @@ function mapRange(range: DocRange, mapping: ChangeDesc) {
   return from >= to ? undefined : {from, to}
 }
 
-const foldEffect = StateEffect.define<DocRange>({map: mapRange})
-const unfoldEffect = StateEffect.define<DocRange>({map: mapRange})
+/// State effect that can be attached to a transaction to fold the
+/// given range. (You probably only need this in exceptional
+/// circumstances—usually you'll just want to let
+/// [`foldCode`](#fold.foldCode) and the [fold
+/// gutter](#fold.foldGutter) create the transactions.)
+export const foldEffect = StateEffect.define<DocRange>({map: mapRange})
+
+/// State effect that unfolds the given range (if it was folded).
+export const unfoldEffect = StateEffect.define<DocRange>({map: mapRange})
 
 function selectedLines(view: EditorView) {
   let lines: BlockInfo[] = []
@@ -33,10 +40,9 @@ const foldState = StateField.define<DecorationSet>({
     for (let e of tr.effects) {
       if (e.is(foldEffect) && !foldExists(folded, e.value.from, e.value.to))
         folded = folded.update({add: [foldWidget.range(e.value.from, e.value.to)]})
-      else if (e.is(unfoldEffect)) {
+      else if (e.is(unfoldEffect))
         folded = folded.update({filter: (from, to) => e.value.from != from || e.value.to != to,
                                 filterFrom: e.value.from, filterTo: e.value.to})
-      }
     }
     // Clear folded ranges that cover the selection head
     if (tr.selection) {
@@ -52,6 +58,12 @@ const foldState = StateField.define<DecorationSet>({
   },
   provide: f => EditorView.decorations.compute([f], s => s.field(f))
 })
+
+/// Get a [range set](#rangeset.RangeSet) containing the folded ranges
+/// in the given state.
+export function foldedRanges(state: EditorState): DecorationSet {
+  return state.field(foldState, false) || RangeSet.empty
+}
 
 function foldInside(state: EditorState, from: number, to: number) {
   let found: {from: number, to: number} | null = null
