@@ -197,17 +197,22 @@ const foldWidget = Decoration.replace({widget: new class extends WidgetType {
 }})
 
 interface FoldGutterConfig {
-  /// Text used to indicate that a given line can be folded. Defaults
-  /// to `"⌄"`.
-  openText?: string
-  /// Text used to indicate that a given line is folded. Defaults to
-  /// `"›"`.
-  closedText?: string
+  /// A function that creates the DOM element used to indicate a
+  /// given line is folded or can be folded. 
+  /// When not given, the `openText` option will be used instead.
+  markerDOM?: ((open: boolean) => HTMLElement) | null,
+  /// Text used to indicate that a given line can be folded. 
+  /// Defaults to `"⌄"`.
+  openText?: string,
+  /// Text used to indicate that a given line is folded. 
+  /// Defaults to `"›"`.
+  closedText?: string,
 }
 
 const foldGutterDefaults: Required<FoldGutterConfig> = {
   openText: "⌄",
-  closedText: "›"
+  closedText: "›",
+  markerDOM: null,
 }
 
 class FoldMarker extends GutterMarker {
@@ -217,6 +222,8 @@ class FoldMarker extends GutterMarker {
   eq(other: FoldMarker) { return this.config == other.config && this.open == other.open }
 
   toDOM(view: EditorView) {
+    if (this.config.markerDOM) return this.config.markerDOM(this.open)
+
     let span = document.createElement("span")
     span.textContent = this.open ? this.config.openText : this.config.closedText
     span.title = view.state.phrase(this.open ? "Fold line" : "Unfold line")
