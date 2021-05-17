@@ -199,7 +199,7 @@ const foldWidget = Decoration.replace({widget: new class extends WidgetType {
 interface FoldGutterConfig {
   /// A function that creates the DOM element used to indicate a
   /// given line is folded or can be folded. 
-  /// When not given, the `openText` option will be used instead.
+  /// When not given, the `openText`/`closeText` option will be used instead.
   markerDOM?: ((open: boolean) => HTMLElement) | null,
   /// Text used to indicate that a given line can be folded. 
   /// Defaults to `"⌄"`.
