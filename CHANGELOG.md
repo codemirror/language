@@ -1,3 +1,9 @@
+## 0.18.2 (2021-06-01)
+
+### Bug fixes
+
+Fix an issue where asynchronous re-parsing (with dynamically loaded languages) sometimes failed to fully happen.
+
 ## 0.18.1 (2021-03-31)
 
 ### Breaking changes
