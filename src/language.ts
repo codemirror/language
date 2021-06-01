@@ -483,10 +483,10 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
     this.checkAsyncSchedule(cx)
   }
 
-  scheduleWork(force = false) {
+  scheduleWork() {
     if (this.working > -1) return
-    let {state} = this.view, field = state.field(Language.state)
-    if (!force && field.tree.length >= state.doc.length) return
+    let {state} = this.view, field = state.field(Language.state), frags = field.context.fragments
+    if (field.tree.length >= state.doc.length && frags.length && frags[0].from == 0 && frags[0].to >= state.doc.length) return
     this.working = requestIdle(this.work, {timeout: Work.Pause})
   }
 
@@ -515,7 +515,7 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
 
   checkAsyncSchedule(cx: EditorParseContext) {
     if (cx.scheduleOn) {
-      cx.scheduleOn.then(() => this.scheduleWork(true))
+      cx.scheduleOn.then(() => this.scheduleWork())
       cx.scheduleOn = null
     }
   }
