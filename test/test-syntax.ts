@@ -1,8 +1,8 @@
 import ist from "ist"
-import {getIndentUnit, indentString, indentUnit, EditorParseContext} from "@codemirror/language"
+import {getIndentUnit, indentString, indentUnit, ParseContext} from "@codemirror/language"
 import {EditorState, ChangeSet, Text} from "@codemirror/state"
-import {parser} from "lezer-javascript"
-import {Tree} from "lezer-tree"
+import {parser} from "@lezer/javascript"
+import {Tree} from "@lezer/common"
 
 let lines = `const {readFile} = require("fs");
 readFile("package.json", "utf8", (err, data) => {
@@ -13,10 +13,10 @@ for (let l0 = lines.length, i = l0; i < 5000; i++) lines[i] = lines[i % l0]
 let doc = Text.of(lines)
 
 function pContext(doc: Text) {
-  return new EditorParseContext(parser, EditorState.create({doc}), [], Tree.empty, {from: 0, to: doc.length}, [], null)
+  return new ParseContext(parser, EditorState.create({doc}), [], Tree.empty, 0, {from: 0, to: doc.length}, [], null)
 }
 
-describe("EditorParseContext", () => {
+describe("ParseContext", () => {
   it("can parse a document", () => {
     let cx = pContext(Text.of(["let x = 10"]))
     cx.work(1e8)

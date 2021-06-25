@@ -1,4 +1,4 @@
-import {NodeProp, SyntaxNode} from "lezer-tree"
+import {NodeProp, SyntaxNode} from "@lezer/common"
 import {EditorState, Facet} from "@codemirror/state"
 import {syntaxTree} from "./language"
 

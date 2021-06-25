@@ -29,12 +29,12 @@
     "@codemirror/state": "^0.18.0",
     "@codemirror/text": "^0.18.0",
     "@codemirror/view": "^0.18.0",
-    "lezer": "^0.13.4",
-    "lezer-tree": "^0.13.0"
+    "@lezer/common": "^0.14.0",
+    "@lezer/lr": "^0.14.0"
   },
   "devDependencies": {
     "@codemirror/buildhelper": "^0.1.5",
-    "lezer-javascript": "^0.13.0"
+    "@lezer/javascript": "^0.14.0"
   },
   "repository": {
     "type": "git",

@@ -1,8 +1,8 @@
-import {Tree, SyntaxNode, ChangedRange, TreeFragment, NodeProp, NodeType,
-        Input, PartialParse, ParseContext} from "lezer-tree"
-// NOTE: This package should only use _types_ from "lezer", to avoid
-// pulling in that dependency when no actual Lezer-based parser is used.
-import {Parser, ParserConfig} from "lezer"
+import {Tree, SyntaxNode, ChangedRange, TreeFragment, NodeProp, NodeType, Input,
+        PartialParse, Parser, ParseSpec, FullParseSpec} from "@lezer/common"
+// NOTE: This package should only use _types_ from @lezer/lr, to avoid
+// pulling in that dependency when no actual LR parser is used.
+import {LRParser, ParserConfig} from "@lezer/lr"
 import {Text, TextIterator} from "@codemirror/text"
 import {EditorState, StateField, Transaction, Extension, StateEffect, Facet, ChangeDesc} from "@codemirror/state"
 import {ViewPlugin, ViewUpdate, EditorView} from "@codemirror/view"
@@ -35,8 +35,8 @@ export class Language {
   readonly extension: Extension
 
   /// The parser object. Can be useful when using this as a [nested
-  /// parser](https://lezer.codemirror.net/docs/ref#lezer.NestedParserSpec).
-  parser: {startParse: (input: Input, startPos: number, context: ParseContext) => PartialParse}
+  /// parser](https://lezer.codemirror.net/docs/ref#common.Parser).
+  parser: Parser
 
   /// Construct a language object. You usually don't need to invoke
   /// this directly. But when you do, make sure you use
@@ -46,7 +46,7 @@ export class Language {
     /// The [language data](#state.EditorState.languageDataAt) data
     /// facet used for this language.
     readonly data: Facet<{[name: string]: any}>,
-    parser: {startParse(input: Input, pos: number, context: EditorParseContext): PartialParse},
+    parser: Parser,
     /// The node type of the top node of trees produced by this parser.
     readonly topNode: NodeType,
     extraExtensions: Extension[] = []
@@ -57,7 +57,7 @@ export class Language {
     if (!EditorState.prototype.hasOwnProperty("tree"))
       Object.defineProperty(EditorState.prototype, "tree", {get() { return syntaxTree(this) }})
 
-    this.parser = parser as {startParse: (input: Input, startPos: number, context: ParseContext) => PartialParse}
+    this.parser = parser
     this.extension = [
       language.of(this),
       EditorState.languageData.of((state, pos) => state.facet(languageDataFacetAt(state, pos)!))
@@ -93,17 +93,6 @@ export class Language {
   /// default implementation returns true.
   get allowsNesting() { return true }
 
-  /// Use this language to parse the given string into a tree.
-  parseString(code: string) {
-    let doc = Text.of(code.split("\n"))
-    let parse = this.parser.startParse(new DocInput(doc), 0,
-                                       new EditorParseContext(this.parser, EditorState.create({doc}), [],
-                                                              Tree.empty, {from: 0, to: code.length}, [], null))
-    let tree
-    while (!(tree = parse.advance())) {}
-    return tree
-  }
-
   /// @internal
   static state: StateField<LanguageState>
 
@@ -125,12 +114,12 @@ function languageDataFacetAt(state: EditorState, pos: number) {
   return topLang.data
 }
 
-/// A subclass of [`Language`](#language.Language) for use with
-/// [Lezer](https://lezer.codemirror.net/docs/ref#lezer.Parser)
+/// A subclass of [`Language`](#language.Language) for use with Lezer
+/// [LR parsers](https://lezer.codemirror.net/docs/ref#lr.LRParser)
 /// parsers.
 export class LezerLanguage extends Language {
   private constructor(data: Facet<{[name: string]: any}>,
-                      readonly parser: Parser) {
+                      readonly parser: LRParser) {
     super(data, parser, parser.topNode)
   }
 
@@ -139,7 +128,7 @@ export class LezerLanguage extends Language {
     /// The parser to use. Should already have added editor-relevant
     /// node props (and optionally things like dialect and top rule)
     /// configured.
-    parser: Parser,
+    parser: LRParser,
     /// [Language data](#state.EditorState.languageDataAt)
     /// to register for this language.
     languageData?: {[name: string]: any}
@@ -172,15 +161,14 @@ export function syntaxTree(state: EditorState): Tree {
 /// up to that point if the tree isn't already available.
 export function ensureSyntaxTree(state: EditorState, upto: number, timeout = 50): Tree | null {
   let parse = state.field(Language.state, false)?.context
-  return !parse ? null : parse.tree.length >= upto || parse.work(timeout, upto) ? parse.tree : null
+  return !parse ? null : parse.treeLen >= upto || parse.work(timeout, upto) ? parse.tree : null
 }
 
 // Lezer-style Input object for a Text document.
 class DocInput implements Input {
-  cursor: TextIterator
+  cursor: TextIterator // FIXME make bidirectional
   cursorPos = 0
   string = ""
-  prevString = ""
 
   constructor(readonly doc: Text, readonly length: number = doc.length) {
     this.cursor = doc.iter()
@@ -191,30 +179,17 @@ class DocInput implements Input {
       this.cursor = this.doc.iter()
       this.cursorPos = 0
     }
-    this.prevString = pos == this.cursorPos ? this.string : ""
     this.string = this.cursor.next(pos - this.cursorPos).value
     this.cursorPos = pos + this.string.length
     return this.cursorPos - this.string.length
   }
 
-  get(pos: number) {
-    if (pos >= this.length) return -1
-    let stringStart = this.cursorPos - this.string.length
-    if (pos < stringStart || pos >= this.cursorPos) {
-      if (pos < stringStart && pos >= stringStart - this.prevString.length)
-        return this.prevString.charCodeAt(pos - (stringStart - this.prevString.length))
-      stringStart = this.syncTo(pos)
-    }
-    return this.string.charCodeAt(pos - stringStart)
+  chunk(pos: number) {
+    this.syncTo(pos)
+    return this.string
   }
 
-  lineAfter(pos: number) {
-    if (pos >= this.length || pos < 0) return ""
-    let stringStart = this.cursorPos - this.string.length
-    if (pos < stringStart || pos >= this.cursorPos)
-      stringStart = this.syncTo(pos)
-    return this.cursor.lineBreak ? "" : this.string.slice(pos - stringStart, Math.min(this.length - stringStart, this.string.length))
-  }
+  get lineChunks() { return true }
 
   read(from: number, to: number) {
     let stringStart = this.cursorPos - this.string.length
@@ -222,10 +197,6 @@ class DocInput implements Input {
       return this.doc.sliceString(from, to)
     else
       return this.string.slice(from - stringStart, to - stringStart)
-  }
-
-  clip(at: number) {
-    return new DocInput(this.doc, at)
   }
 }
 
@@ -252,21 +223,24 @@ const enum Work {
   MaxParseAhead = 1e6
 }
 
+let currentContext: ParseContext | null = null
+
 /// A parse context provided to parsers working on the editor content.
-export class EditorParseContext implements ParseContext {
+export class ParseContext {
   private parse: PartialParse | null = null
   /// @internal
   tempSkipped: {from: number, to: number}[] = []
 
   /// @internal
   constructor(
-    private parser: {startParse(input: Input, pos: number, context: ParseContext): PartialParse},
+    private parser: Parser,
     /// The current editor state.
     readonly state: EditorState,
     /// Tree fragments that can be reused by incremental re-parses.
     public fragments: readonly TreeFragment[] = [],
     /// @internal
     public tree: Tree,
+    public treeLen: number,
     /// The current editor viewport (or some overapproximation
     /// thereof). Intended to be used for opportunistically avoiding
     /// work (in which case
@@ -282,36 +256,54 @@ export class EditorParseContext implements ParseContext {
     public scheduleOn: Promise<unknown> | null
   ) {}
 
+  private startParse() {
+    return this.parser.startParse({input: new DocInput(this.state.doc), fragments: this.fragments})
+  }
+
   /// @internal
   work(time: number, upto?: number) {
-    if (this.tree != Tree.empty && (upto == null ? this.tree.length == this.state.doc.length : this.tree.length >= upto)) {
+    if (this.tree != Tree.empty && (upto == null ? this.treeLen == this.state.doc.length : this.treeLen >= upto)) {
       this.takeTree()
       return true
     }
-    if (!this.parse)
-      this.parse = this.parser.startParse(new DocInput(this.state.doc), 0, this)
-    let endTime = Date.now() + time
-    for (;;) {
-      let done = this.parse.advance()
-      if (done) {
-        this.fragments = this.withoutTempSkipped(TreeFragment.addTree(done))
-        this.parse = null
-        this.tree = done
-        return true
-      } else if (upto != null && this.parse.pos >= upto) {
-        this.takeTree()
-        return true
+    return this.withContext(() => {
+      if (!this.parse) this.parse = this.startParse()
+      if (upto != null && (this.parse.stoppedAt == null || this.parse.stoppedAt > upto)) this.parse.stopAt(upto)
+      let endTime = Date.now() + time
+      for (;;) {
+        let done = this.parse.advance()
+        if (done) {
+          this.fragments = this.withoutTempSkipped(TreeFragment.addTree(done, this.fragments, this.parse.stoppedAt != null))
+          this.treeLen = this.parse.stoppedAt ?? this.state.doc.length
+          this.tree = done
+          this.parse = null
+          if (this.treeLen < (upto ?? this.state.doc.length))
+            this.parse = this.startParse()
+          else
+            return true
+        }
+        if (Date.now() > endTime) return false
       }
-      if (Date.now() > endTime) return false
-    }
+    })
   }
   
   /// @internal
   takeTree() {
-    if (this.parse && this.parse.pos > this.tree.length) {
-      this.tree = this.parse.forceFinish()
+    let pos, tree: Tree | undefined | null
+    if (this.parse && (pos = this.parse.parsedPos) > this.treeLen) {
+      if (this.parse.stoppedAt == null || this.parse.stoppedAt > pos) this.parse.stopAt(pos)
+      this.withContext(() => { while (!(tree = this.parse!.advance())) {} })
+      this.tree = tree!
       this.fragments = this.withoutTempSkipped(TreeFragment.addTree(this.tree, this.fragments, true))
+      this.parse = null
     }
+  }
+
+  private withContext<T>(f: () => T): T {
+    let prev = currentContext
+    currentContext = this
+    try { return f() }
+    finally { currentContext = prev }
   }
 
   private withoutTempSkipped(fragments: readonly TreeFragment[]) {
@@ -322,13 +314,14 @@ export class EditorParseContext implements ParseContext {
 
   /// @internal
   changes(changes: ChangeDesc, newState: EditorState) {
-    let {fragments, tree, viewport, skipped} = this
+    let {fragments, tree, treeLen, viewport, skipped} = this
     this.takeTree()
     if (!changes.empty) {
       let ranges: ChangedRange[] = []
       changes.iterChangedRanges((fromA, toA, fromB, toB) => ranges.push({fromA, toA, fromB, toB}))
       fragments = TreeFragment.applyChanges(fragments, ranges)
       tree = Tree.empty
+      treeLen = 0
       viewport = {from: changes.mapPos(viewport.from, -1), to: changes.mapPos(viewport.to, 1)}
       if (this.skipped.length) {
         skipped = []
@@ -338,7 +331,7 @@ export class EditorParseContext implements ParseContext {
         }
       }
     }
-    return new EditorParseContext(this.parser, newState, fragments, tree, viewport, skipped, this.scheduleOn)
+    return new ParseContext(this.parser, newState, fragments, tree, treeLen, viewport, skipped, this.scheduleOn)
   }
 
   /// @internal
@@ -378,30 +371,36 @@ export class EditorParseContext implements ParseContext {
   /// When `until` is given, a reparse will be scheduled when that
   /// promise resolves.
   static getSkippingParser(until?: Promise<unknown>) {
-    return {
-      startParse(input: Input, startPos: number, context: ParseContext): PartialParse {
-        return {
-          pos: startPos,
+    return new class extends Parser {
+      startParse(spec: ParseSpec): PartialParse {
+        let {from, to} = new FullParseSpec(spec)
+        let parser = {
+          parsedPos: from,
           advance() {
-            let ecx = context as EditorParseContext
-            ecx.tempSkipped.push({from: startPos, to: input.length})
-            if (until) ecx.scheduleOn = ecx.scheduleOn ? Promise.all([ecx.scheduleOn, until]) : until
-            this.pos = input.length
-            return new Tree(NodeType.none, [], [], input.length - startPos)
+            let cx = currentContext
+            if (cx) {
+              cx.tempSkipped.push({from, to})
+              if (until) cx.scheduleOn = cx.scheduleOn ? Promise.all([cx.scheduleOn, until]) : until
+            }
+            this.parsedPos = to
+            return new Tree(NodeType.none, [], [], to - from)
           },
-          forceFinish() { return this.advance() as Tree }
+          stoppedAt: null,
+          stopAt() {}
         }
+        return parser
       }
     }
   }
 
-  /// FIXME backwards compatible shim, remove on next major @internal
-  static skippingParser = EditorParseContext.getSkippingParser()
-
   /// @internal
   movedPast(pos: number) {
-    return this.tree.length < pos && this.parse && this.parse.pos >= pos
+    return this.treeLen < pos && this.parse && this.parse.parsedPos >= pos
   }
+
+  /// Get the context for the current parse, or `null` if no editor
+  /// parse is in progress.
+  static get() { return currentContext }
 }
 
 function cutFragments(fragments: readonly TreeFragment[], from: number, to: number) {
@@ -416,7 +415,7 @@ class LanguageState {
   constructor(
     // A mutable parse state that is used to preserve work done during
     // the lifetime of a state when moving to the next state.
-    readonly context: EditorParseContext
+    readonly context: ParseContext
   ) {
     this.tree = context.tree
   }
@@ -427,15 +426,15 @@ class LanguageState {
     // If the previous parse wasn't done, go forward only up to its
     // end position or the end of the viewport, to avoid slowing down
     // state updates with parse work beyond the viewport.
-    let upto = this.context.tree.length == tr.startState.doc.length ? undefined
-      : Math.max(tr.changes.mapPos(this.context.tree.length), newCx.viewport.to)
+    let upto = this.context.treeLen == tr.startState.doc.length ? undefined
+      : Math.max(tr.changes.mapPos(this.context.treeLen), newCx.viewport.to)
     if (!newCx.work(Work.Apply, upto)) newCx.takeTree()
     return new LanguageState(newCx)
   }
 
   static init(state: EditorState) {
-    let parseState = new EditorParseContext(state.facet(language)!.parser, state, [],
-                                            Tree.empty, {from: 0, to: state.doc.length}, [], null)
+    let parseState = new ParseContext(state.facet(language)!.parser, state, [],
+                                      Tree.empty, 0, {from: 0, to: state.doc.length}, [], null)
     if (!parseState.work(Work.Apply)) parseState.takeTree()
     return new LanguageState(parseState)
   }
@@ -474,7 +473,7 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
     let cx = this.view.state.field(Language.state).context
     if (update.viewportChanged) {
       if (cx.updateViewport(update.view.viewport)) cx.reset()
-      if (this.view.viewport.to > cx.tree.length) this.scheduleWork()
+      if (this.view.viewport.to > cx.treeLen) this.scheduleWork()
     }
     if (update.docChanged) {
       if (this.view.hasFocus) this.chunkBudget += Work.ChangeBonus
@@ -486,7 +485,8 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
   scheduleWork() {
     if (this.working > -1) return
     let {state} = this.view, field = state.field(Language.state), frags = field.context.fragments
-    if (field.tree.length >= state.doc.length && frags.length && frags[0].from == 0 && frags[0].to >= state.doc.length) return
+    if (field.tree == field.context.tree && field.context.treeLen >= state.doc.length &&
+        frags.length && frags[0].from == 0 && frags[0].to >= state.doc.length) return
     this.working = requestIdle(this.work, {timeout: Work.Pause})
   }
 
@@ -501,7 +501,7 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
     if (this.chunkBudget <= 0) return // No more budget
 
     let {state, viewport: {to: vpTo}} = this.view, field = state.field(Language.state)
-    if (field.tree.length >= vpTo + Work.MaxParseAhead) return
+    if (field.tree == field.context.tree && field.context.treeLen >= vpTo + Work.MaxParseAhead) return
     let time = Math.min(this.chunkBudget, deadline ? Math.max(Work.MinSlice, deadline.timeRemaining()) : Work.Slice)
     let done = field.context.work(time, vpTo + Work.MaxParseAhead)
     this.chunkBudget -= Date.now() - now
@@ -513,7 +513,7 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
     this.checkAsyncSchedule(field.context)
   }
 
-  checkAsyncSchedule(cx: EditorParseContext) {
+  checkAsyncSchedule(cx: ParseContext) {
     if (cx.scheduleOn) {
       cx.scheduleOn.then(() => this.scheduleWork())
       cx.scheduleOn = null
