@@ -2,7 +2,7 @@ import {combineConfig, EditorState, Facet, StateField, Extension} from "@codemir
 import {syntaxTree} from "@codemirror/language"
 import {EditorView} from "@codemirror/view"
 import {Decoration, DecorationSet} from "@codemirror/view"
-import {Tree, SyntaxNode, NodeType, NodeProp} from "lezer-tree"
+import {Tree, SyntaxNode, NodeType, NodeProp} from "@lezer/common"
 
 export interface Config {
   /// Whether the bracket matching should look at the character after
@@ -12,7 +12,7 @@ export interface Config {
   /// The bracket characters to match, as a string of pairs. Defaults
   /// to `"()[]{}"`. Note that these are only used as fallback when
   /// there is no [matching
-  /// information](https://lezer.codemirror.net/docs/ref/#tree.NodeProp^closedBy)
+  /// information](https://lezer.codemirror.net/docs/ref/#common.NodeProp^closedBy)
   /// in the syntax tree.
   brackets?: string,
   /// The maximum distance to scan for matching brackets. This is only
