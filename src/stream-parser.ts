@@ -1,5 +1,5 @@
 import {Tree, TreeFragment, NodeType, NodeSet, SyntaxNode, PartialParse, Parser,
-        ParseSpec, FullParseSpec} from "@lezer/common"
+        ParseSpec, FullParseSpec, NodeProp} from "@lezer/common"
 import {Tag, tags, styleTags} from "@codemirror/highlight"
 import {Language, defineLanguageFacet, languageDataProp, IndentContext, indentService,
         getIndentUnit, syntaxTree, ParseContext} from "@codemirror/language"
@@ -67,7 +67,7 @@ export class StreamLanguage<State> extends Language {
   /// @internal
   streamParser: Required<StreamParser<State>>
   /// @internal
-  stateAfter: WeakMap<Tree, State>
+  stateAfter: NodeProp<State>
 
   private constructor(parser: StreamParser<State>) {
     let data = defineLanguageFacet(parser.languageData)
@@ -78,7 +78,7 @@ export class StreamLanguage<State> extends Language {
     super(data, impl, docID(data), [indentService.of((cx, pos) => this.getIndent(cx, pos))])
     self = this
     this.streamParser = p
-    this.stateAfter = new WeakMap
+    this.stateAfter = new NodeProp<State>({perNode: true})
   }
 
   static define<State>(spec: StreamParser<State>) { return new StreamLanguage(spec) }
@@ -113,7 +113,7 @@ export class StreamLanguage<State> extends Language {
 function findState<State>(
   lang: StreamLanguage<State>, tree: Tree, off: number, startPos: number, before: number
 ): {state: State, pos: number} | null {
-  let state = off >= startPos && off + tree.length <= before && lang.stateAfter.get(tree)
+  let state = off >= startPos && off + tree.length <= before && tree.prop(lang.stateAfter)
   if (state) return {state: lang.streamParser.copyState(state), pos: off + tree.length}
   for (let i = tree.children.length - 1; i >= 0; i--) {
     let child = tree.children[i], pos = off + tree.positions[i]
@@ -234,7 +234,8 @@ class Parse<State> implements PartialParse {
       topID: 0,
       maxBufferLength: C.ChunkSize
     })
-    this.lang.stateAfter.set(tree, this.lang.streamParser.copyState(this.state))
+    tree = new Tree(tree.type, tree.children, tree.positions, tree.length,
+                    [[this.lang.stateAfter, this.lang.streamParser.copyState(this.state)]])
     this.chunks.push(tree)
     this.chunkPos.push(this.chunkStart - this.spec.from)
     this.chunk = []
