@@ -29,7 +29,7 @@ const language = StreamLanguage.define<{count: number}>({
 
 describe("StreamLanguage", () => {
   it("can parse content", () => {
-    ist(language.parseString("if (x) return 500").toString(),
+    ist(language.parser.parse({input: "if (x) return 500"}).toString(),
         "Document(keyword,punctuation,variableName,punctuation,keyword,number)")
   })
 

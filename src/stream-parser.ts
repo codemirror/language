@@ -1,8 +1,8 @@
-import {Tree, TreeFragment, NodeType, NodeSet, SyntaxNode, PartialParse} from "lezer-tree"
-import {Input} from "lezer"
+import {Tree, TreeFragment, NodeType, NodeSet, SyntaxNode, PartialParse, Parser,
+        ParseSpec, FullParseSpec} from "@lezer/common"
 import {Tag, tags, styleTags} from "@codemirror/highlight"
 import {Language, defineLanguageFacet, languageDataProp, IndentContext, indentService,
-        EditorParseContext, getIndentUnit, syntaxTree} from "@codemirror/language"
+        getIndentUnit, syntaxTree, ParseContext} from "@codemirror/language"
 import {EditorState, Facet} from "@codemirror/state"
 import {StringStream} from "./stringstream"
 
@@ -71,9 +71,12 @@ export class StreamLanguage<State> extends Language {
 
   private constructor(parser: StreamParser<State>) {
     let data = defineLanguageFacet(parser.languageData)
-    let p = fullParser(parser)
-    let startParse = (input: Input, startPos: number, context: EditorParseContext) => new Parse(this, input, startPos, context)
-    super(data, {startParse}, docID(data), [indentService.of((cx, pos) => this.getIndent(cx, pos))])
+    let p = fullParser(parser), self: StreamLanguage<State>
+    let impl = new class extends Parser {
+      startParse(spec: ParseSpec) { return new Parse(self, new FullParseSpec(spec)) }
+    }
+    super(data, impl, docID(data), [indentService.of((cx, pos) => this.getIndent(cx, pos))])
+    self = this
     this.streamParser = p
     this.stateAfter = new WeakMap
   }
@@ -135,13 +138,13 @@ function cutTree(lang: StreamLanguage<unknown>, tree: Tree, from: number, to: nu
 }
 
 function findStartInFragments<State>(lang: StreamLanguage<State>, fragments: readonly TreeFragment[],
-                                     startPos: number, state: EditorState) {
+                                     startPos: number, editorState?: EditorState) {
   for (let f of fragments) {
     let found = f.from <= startPos && f.to > startPos && findState(lang, f.tree, 0 - f.offset, startPos, f.to), tree
     if (found && (tree = cutTree(lang, f.tree, startPos + f.offset, found.pos + f.offset, false)))
       return {state: found.state, tree}
   }
-  return {state: lang.streamParser.startState(getIndentUnit(state)), tree: Tree.empty}
+  return {state: lang.streamParser.startState(editorState ? getIndentUnit(editorState) : 4), tree: Tree.empty}
 }
 
 const enum C {
@@ -152,77 +155,94 @@ const enum C {
 
 class Parse<State> implements PartialParse {
   state: State
-  pos: number
+  parsedPos: number
+  stoppedAt: number | null = null
   chunks: Tree[] = []
   chunkPos: number[] = []
   chunkStart: number
   chunk: number[] = []
 
   constructor(readonly lang: StreamLanguage<State>,
-              readonly input: Input,
-              readonly startPos: number,
-              readonly context: EditorParseContext) {
-    let {state, tree} = findStartInFragments(lang, context.fragments, startPos, context.state)
+              readonly spec: FullParseSpec) {
+    let context = ParseContext.get()
+    let {state, tree} = findStartInFragments(lang, spec.fragments, spec.from, context?.state)
     this.state = state
-    this.pos = this.chunkStart = startPos + tree.length
+    this.parsedPos = this.chunkStart = spec.from + tree.length
     if (tree.length) {
       this.chunks.push(tree)
       this.chunkPos.push(0)
     }
-    if (this.pos < context.viewport.from - C.MaxDistanceBeforeViewport) {
+    if (context && this.parsedPos < context.viewport.from - C.MaxDistanceBeforeViewport) {
       this.state = this.lang.streamParser.startState(getIndentUnit(context.state))
-      context.skipUntilInView(this.pos, context.viewport.from)
-      this.pos = context.viewport.from
+      context.skipUntilInView(this.parsedPos, context.viewport.from)
+      this.parsedPos = context.viewport.from
     }
   }
 
   advance() {
-    let end = Math.min(this.context.viewport.to, this.input.length, this.chunkStart + C.ChunkSize)
-    while (this.pos < end) this.parseLine()
-    if (this.chunkStart < this.pos) this.finishChunk()
-    if (end < this.input.length && this.pos < this.context.viewport.to) return null
-    this.context.skipUntilInView(this.pos, this.input.length)
-    return this.finish()
+    let context = ParseContext.get()
+    let parseEnd = this.stoppedAt == null ? this.spec.to : this.stoppedAt
+    let end = Math.min(parseEnd, this.chunkStart + C.ChunkSize)
+    if (context) end = Math.min(end, context.viewport.to)
+    while (this.parsedPos < end) this.parseLine(context)
+    if (this.chunkStart < this.parsedPos) this.finishChunk()
+    if (this.parsedPos >= parseEnd) return this.finish()
+    if (context && this.parsedPos > context.viewport.to) {
+      context.skipUntilInView(this.parsedPos, parseEnd)
+      return this.finish()
+    }
+    return null
   }
 
-  parseLine() {
-    let line = this.input.lineAfter(this.pos), {streamParser} = this.lang
-    let stream = new StringStream(line, this.context ? this.context.state.tabSize : 4, getIndentUnit(this.context.state))
+  stopAt(pos: number) {
+    this.stoppedAt = pos
+  }
+
+  lineAfter(pos: number) {
+    let chunk = this.spec.input.chunk(pos)
+    if (!this.spec.input.lineChunks) {
+      let eol = chunk.indexOf("\n")
+      if (eol > -1) chunk = chunk.slice(0, eol)
+    } else if (chunk == "\n") {
+      chunk = ""
+    }
+    return pos + chunk.length <= this.spec.to ? chunk : chunk.slice(0, this.spec.to - pos)
+  }
+
+  parseLine(context: ParseContext | null) {
+    let line = this.lineAfter(this.parsedPos), {streamParser} = this.lang
+    let stream = new StringStream(line, context ? context.state.tabSize : 4, context ? getIndentUnit(context.state) : 2)
     if (stream.eol()) {
       streamParser.blankLine(this.state, stream.indentUnit)
     } else {
       while (!stream.eol()) {
         let token = readToken(streamParser.token, stream, this.state)
         if (token)
-          this.chunk.push(tokenID(token), this.pos + stream.start, this.pos + stream.pos, 4)
+          this.chunk.push(tokenID(token), this.parsedPos + stream.start, this.parsedPos + stream.pos, 4)
       }
     }
-    this.pos += line.length
-    if (this.pos < this.input.length) this.pos++
+    this.parsedPos += line.length
+    if (this.parsedPos < this.spec.to) this.parsedPos++
   }
 
   finishChunk() {
     let tree = Tree.build({
       buffer: this.chunk,
       start: this.chunkStart,
-      length: this.pos - this.chunkStart,
+      length: this.parsedPos - this.chunkStart,
       nodeSet,
       topID: 0,
       maxBufferLength: C.ChunkSize
     })
     this.lang.stateAfter.set(tree, this.lang.streamParser.copyState(this.state))
     this.chunks.push(tree)
-    this.chunkPos.push(this.chunkStart - this.startPos)
+    this.chunkPos.push(this.chunkStart - this.spec.from)
     this.chunk = []
-    this.chunkStart = this.pos
+    this.chunkStart = this.parsedPos
   }
 
   finish() {
-    return new Tree(this.lang.topNode, this.chunks, this.chunkPos, this.pos - this.startPos).balance()
-  }
-
-  forceFinish() {
-    return this.finish()
+    return new Tree(this.lang.topNode, this.chunks, this.chunkPos, this.parsedPos - this.spec.from).balance()
   }
 }
 
