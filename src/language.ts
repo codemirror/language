@@ -166,7 +166,7 @@ export function ensureSyntaxTree(state: EditorState, upto: number, timeout = 50)
 
 // Lezer-style Input object for a Text document.
 class DocInput implements Input {
-  cursor: TextIterator // FIXME make bidirectional
+  cursor: TextIterator
   cursorPos = 0
   string = ""
 
@@ -175,10 +175,6 @@ class DocInput implements Input {
   }
 
   private syncTo(pos: number) {
-    if (pos < this.cursorPos) { // Reset the cursor if we have to go back
-      this.cursor = this.doc.iter()
-      this.cursorPos = 0
-    }
     this.string = this.cursor.next(pos - this.cursorPos).value
     this.cursorPos = pos + this.string.length
     return this.cursorPos - this.string.length
