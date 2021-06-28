@@ -150,7 +150,7 @@ function matchPlainBrackets(state: EditorState, pos: number, dir: number, tree: 
       if ((found % 2 == 0) == (dir > 0)) {
         depth++
       } else if (depth == 1) { // Closing
-        return {start: startToken, end: {from: basePos + pos, to: basePos + pos + 1}, matched: (found >> 1) == (bracket >> 1)}
+        return {start: startToken, other: {from: basePos + pos, to: basePos + pos + 1}, matched: (found >> 1) == (bracket >> 1)}
       } else {
         depth--
       }
