@@ -161,6 +161,8 @@ class Parse<State> implements PartialParse {
   chunkPos: number[] = []
   chunkStart: number
   chunk: number[] = []
+  chunkReused: undefined | Tree[] = undefined
+  gapIndex: number
 
   constructor(readonly lang: StreamLanguage<State>,
               readonly spec: FullParseSpec) {
@@ -177,6 +179,7 @@ class Parse<State> implements PartialParse {
       context.skipUntilInView(this.parsedPos, context.viewport.from)
       this.parsedPos = context.viewport.from
     }
+    this.gapIndex = spec.gaps ? 0 : -1
   }
 
   advance() {
@@ -209,8 +212,50 @@ class Parse<State> implements PartialParse {
     return pos + chunk.length <= this.spec.to ? chunk : chunk.slice(0, this.spec.to - pos)
   }
 
+  nextLine() {
+    let from = this.parsedPos, line = this.lineAfter(from), end = from + line.length
+    if (this.gapIndex > -1) {
+      for (let i = this.gapIndex, gaps = this.spec.gaps!; i < gaps.length; i++) {
+        let gap = gaps[i]
+        if (gap.from > end) break
+        if (gap.to >= from) {
+          let after = this.lineAfter(gap.to)
+          line = line.slice(0, gap.from - (end - line.length)) + after
+          end = gap.to + after.length
+        }
+      }
+    }
+    return {line, end}
+  }
+
+  skipGapsTo(pos: number, offset: number, side: -1 | 1) {
+    for (let gaps = this.spec.gaps!; this.gapIndex < gaps.length; this.gapIndex++) {
+      let gap = gaps[this.gapIndex], offPos = pos + offset
+      if (side > 0 ? gap.from > offPos : gap.from >= offPos) break
+      offset += gap.to - gap.from
+      if (gap.mount) {
+        let index = (this.chunkReused || (this.chunkReused = [])).push(gap.mount) - 1
+        this.chunk.push(index, gap.from, gap.to, -1)
+      }
+    }
+    return offset
+  }
+
+  emitToken(id: number, from: number, to: number, size: number, offset: number) {
+    if (this.gapIndex > -1) {
+      offset = this.skipGapsTo(from, offset, 1)
+      from += offset
+      let len0 = this.chunk.length
+      offset = this.skipGapsTo(to, offset, -1)
+      to += offset
+      size += this.chunk.length - len0
+    }
+    this.chunk.push(id, from, to, size)
+    return offset
+  }
+
   parseLine(context: ParseContext | null) {
-    let line = this.lineAfter(this.parsedPos), {streamParser} = this.lang
+    let {line, end} = this.nextLine(), offset = 0, {streamParser} = this.lang
     let stream = new StringStream(line, context ? context.state.tabSize : 4, context ? getIndentUnit(context.state) : 2)
     if (stream.eol()) {
       streamParser.blankLine(this.state, stream.indentUnit)
@@ -218,10 +263,12 @@ class Parse<State> implements PartialParse {
       while (!stream.eol()) {
         let token = readToken(streamParser.token, stream, this.state)
         if (token)
-          this.chunk.push(tokenID(token), this.parsedPos + stream.start, this.parsedPos + stream.pos, 4)
+          offset = this.emitToken(tokenID(token), this.parsedPos + stream.start, this.parsedPos + stream.pos, 4, offset)
       }
     }
-    this.parsedPos += line.length
+    if (this.gapIndex > -1)
+      this.skipGapsTo(this.parsedPos + line.length, offset, 1)
+    this.parsedPos = end
     if (this.parsedPos < this.spec.to) this.parsedPos++
   }
 
@@ -232,13 +279,15 @@ class Parse<State> implements PartialParse {
       length: this.parsedPos - this.chunkStart,
       nodeSet,
       topID: 0,
-      maxBufferLength: C.ChunkSize
+      maxBufferLength: C.ChunkSize,
+      reused: this.chunkReused
     })
     tree = new Tree(tree.type, tree.children, tree.positions, tree.length,
                     [[this.lang.stateAfter, this.lang.streamParser.copyState(this.state)]])
     this.chunks.push(tree)
     this.chunkPos.push(this.chunkStart - this.spec.from)
     this.chunk = []
+    this.chunkReused = undefined
     this.chunkStart = this.parsedPos
   }
 
