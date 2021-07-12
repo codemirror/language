@@ -264,7 +264,8 @@ export class ParseContext {
     }
     return this.withContext(() => {
       if (!this.parse) this.parse = this.startParse()
-      if (upto != null && (this.parse.stoppedAt == null || this.parse.stoppedAt > upto)) this.parse.stopAt(upto)
+      if (upto != null && (this.parse.stoppedAt == null || this.parse.stoppedAt > upto) &&
+          upto < this.state.doc.length) this.parse.stopAt(upto)
       let endTime = Date.now() + time
       for (;;) {
         let done = this.parse.advance()
