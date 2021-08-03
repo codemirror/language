@@ -2,7 +2,7 @@ import ist from "ist"
 import {StreamLanguage} from "@codemirror/stream-parser"
 import {EditorState} from "@codemirror/state"
 import {syntaxTree, getIndentation, Language} from "@codemirror/language"
-import {InputGap, NodeType, Tree, SyntaxNode} from "@lezer/common"
+import {SyntaxNode} from "@lezer/common"
 
 let startStates = 0, keywords = ["if", "else", "return"]
 
@@ -30,7 +30,7 @@ const language = StreamLanguage.define<{count: number}>({
 
 describe("StreamLanguage", () => {
   it("can parse content", () => {
-    ist(language.parser.parse({input: "if (x) return 500"}).toString(),
+    ist(language.parser.parse("if (x) return 500").toString(),
         "Document(keyword,punctuation,variableName,punctuation,keyword,number)")
   })
 
@@ -101,18 +101,12 @@ describe("StreamLanguage", () => {
 
   it("supports gaps", () => {
     let text = "1 50 xxx\nxxx\nxxx 60\n70 xxx80xxx 9xxx0"
-    let gapType = NodeType.define({id: 1, name: "Gap"})
-    function gap(from: number, to: number) {
-      return new InputGap(from, to, new Tree(gapType, [], [], to - from))
-    }
-    let gaps = [gap(5, 16), gap(23, 26), gap(28, 31), gap(33, 36)]
-    let tree = language.parser.parse({input: text, gaps})
-    ist(tree.toString(), "Document(number,number,Gap,number,number,Gap,number,Gap,number(Gap))")
-    isNode(tree.resolve(5, 1), "Gap", 5, 16)
+    let ranges = [{from: 0, to: 5}, {from: 16, to: 23}, {from: 26, to: 28}, {from: 31, to: 33}, {from: 36, to: 37}]
+    let tree = language.parser.parse(text, [], ranges)
+    ist(tree.toString(), "Document(number,number,number,number,number,number)")
     isNode(tree.resolve(17, 1), "number", 17, 19)
     isNode(tree.resolve(20, 1), "number", 20, 22)
     isNode(tree.resolve(26, 1), "number", 26, 28)
     isNode(tree.resolve(32, 1), "number", 32, 37)
-    isNode(tree.resolve(33, 1), "Gap", 33, 36)
   })
 })
