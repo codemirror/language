@@ -1,5 +1,5 @@
 import {Tree, SyntaxNode, ChangedRange, TreeFragment, NodeProp, NodeType, Input,
-        PartialParse, Parser, ParseSpec, FullParseSpec} from "@lezer/common"
+        PartialParse, Parser} from "@lezer/common"
 // NOTE: This package should only use _types_ from @lezer/lr, to avoid
 // pulling in that dependency when no actual LR parser is used.
 import {LRParser, ParserConfig} from "@lezer/lr"
@@ -77,21 +77,35 @@ export class Language {
     if (lang?.data == this.data) return [{from: 0, to: state.doc.length}]
     if (!lang || !lang.allowsNesting) return []
     let result: {from: number, to: number}[] = []
-    syntaxTree(state).iterate({
-      enter: (type, from, to) => {
-        if (type.isTop && type.prop(languageDataProp) == this.data) {
-          result.push({from, to})
-          return false
-        }
-        return undefined
+    let explore = (tree: Tree, from: number) => {
+      if (tree.prop(languageDataProp) == this.data) {
+        result.push({from, to: from + tree.length})
+        return
       }
-    })
+      let mount = tree.prop(NodeProp.mounted)
+      if (mount) {
+        if (mount.tree.prop(languageDataProp) == this.data) {
+          if (mount.overlay) for (let r of mount.overlay) result.push({from: r.from + from, to: r.to + from})
+          else result.push({from: from, to: from + tree.length})
+          return
+        } else if (mount.overlay) {
+          let size = result.length
+          explore(mount.tree, mount.overlay[0].from + from)
+          if (result.length > size) return
+        }
+      }
+      for (let i = 0; i < tree.children.length; i++) {
+        let ch = tree.children[i]
+        if (ch instanceof Tree) explore(ch, tree.positions[i] + from)
+      }
+    }
+    explore(syntaxTree(state), 0)
     return result
   }
 
   /// Indicates whether this language allows nested languages. The
-  /// default implementation returns true.
-  get allowsNesting() { return true }
+  /// default implementation returns false.
+  get allowsNesting() { return false }
 
   /// @internal
   static state: StateField<LanguageState>
@@ -104,20 +118,18 @@ function languageDataFacetAt(state: EditorState, pos: number) {
   let topLang = state.facet(language)
   if (!topLang) return null
   if (!topLang.allowsNesting) return topLang.data
-  let tree = syntaxTree(state)
-  let target: SyntaxNode | null = tree.resolve(pos, -1)
-  while (target) {
-    let facet = target.type.prop(languageDataProp)
-    if (facet) return facet
-    target = target.parent
+  let node: SyntaxNode | null = syntaxTree(state).topNode, facet
+  while (node) {
+    facet = node.type.prop(languageDataProp) || facet
+    node = node.enter(pos, -1, false)
   }
-  return topLang.data
+  return facet
 }
 
 /// A subclass of [`Language`](#language.Language) for use with Lezer
 /// [LR parsers](https://lezer.codemirror.net/docs/ref#lr.LRParser)
 /// parsers.
-export class LezerLanguage extends Language {
+export class LezerLanguage extends Language { // FIXME rename to LRLanguage
   private constructor(data: Facet<{[name: string]: any}>,
                       readonly parser: LRParser) {
     super(data, parser, parser.topNode)
@@ -144,8 +156,6 @@ export class LezerLanguage extends Language {
   configure(options: ParserConfig): LezerLanguage {
     return new LezerLanguage(this.data, this.parser.configure(options))
   }
-
-  get allowsNesting() { return this.parser.hasNested }
 }
 
 /// Get the syntax tree for a state, which is the current (possibly
@@ -253,7 +263,7 @@ export class ParseContext {
   ) {}
 
   private startParse() {
-    return this.parser.startParse({input: new DocInput(this.state.doc), fragments: this.fragments})
+    return this.parser.startParse(new DocInput(this.state.doc), this.fragments)
   }
 
   /// @internal
@@ -369,14 +379,18 @@ export class ParseContext {
   /// promise resolves.
   static getSkippingParser(until?: Promise<unknown>) {
     return new class extends Parser {
-      startParse(spec: ParseSpec): PartialParse {
-        let {from, to} = new FullParseSpec(spec)
+      startParseInner(
+        input: Input,
+        fragments: readonly TreeFragment[],
+        ranges: readonly {from: number, to: number}[]
+      ): PartialParse {
+        let from = ranges[0].from, to = ranges[ranges.length - 1].to
         let parser = {
           parsedPos: from,
           advance() {
             let cx = currentContext
             if (cx) {
-              cx.tempSkipped.push({from, to})
+              for (let r of ranges) cx.tempSkipped.push(r)
               if (until) cx.scheduleOn = cx.scheduleOn ? Promise.all([cx.scheduleOn, until]) : until
             }
             this.parsedPos = to
