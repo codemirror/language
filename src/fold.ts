@@ -56,7 +56,7 @@ const foldState = StateField.define<DecorationSet>({
     }
     return folded
   },
-  provide: f => EditorView.decorations.compute([f], s => s.field(f))
+  provide: f => EditorView.decorations.from(f)
 })
 
 /// Get a [range set](#rangeset.RangeSet) containing the folded ranges
