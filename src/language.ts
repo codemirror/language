@@ -60,13 +60,13 @@ export class Language {
     this.parser = parser
     this.extension = [
       language.of(this),
-      EditorState.languageData.of((state, pos) => state.facet(languageDataFacetAt(state, pos)!))
+      EditorState.languageData.of((state, pos, side) => state.facet(languageDataFacetAt(state, pos, side)!))
     ].concat(extraExtensions)
   }
 
   /// Query whether this language is active at the given position.
-  isActiveAt(state: EditorState, pos: number) {
-    return languageDataFacetAt(state, pos) == this.data
+  isActiveAt(state: EditorState, pos: number, side: -1 | 0 | 1 = -1) {
+    return languageDataFacetAt(state, pos, side) == this.data
   }
 
   /// Find the document regions that were parsed using this language.
@@ -114,14 +114,14 @@ export class Language {
   static setState = StateEffect.define<LanguageState>()
 }
 
-function languageDataFacetAt(state: EditorState, pos: number) {
+function languageDataFacetAt(state: EditorState, pos: number, side: -1 | 0 | 1) {
   let topLang = state.facet(language)
   if (!topLang) return null
   if (!topLang.allowsNesting) return topLang.data
   let node: SyntaxNode | null = syntaxTree(state).topNode, facet
   while (node) {
     facet = node.type.prop(languageDataProp) || facet
-    node = node.enter(pos, -1, false)
+    node = node.enter(pos, side, true, false)
   }
   return facet
 }
