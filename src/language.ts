@@ -104,8 +104,8 @@ export class Language {
   }
 
   /// Indicates whether this language allows nested languages. The
-  /// default implementation returns false.
-  get allowsNesting() { return false }
+  /// default implementation returns true.
+  get allowsNesting() { return true }
 
   /// @internal
   static state: StateField<LanguageState>
@@ -156,6 +156,8 @@ export class LezerLanguage extends Language { // FIXME rename to LRLanguage
   configure(options: ParserConfig): LezerLanguage {
     return new LezerLanguage(this.data, this.parser.configure(options))
   }
+
+  get allowsNesting() { return (this.parser as any).wrappers.length > 0 } // FIXME
 }
 
 /// Get the syntax tree for a state, which is the current (possibly
@@ -379,7 +381,7 @@ export class ParseContext {
   /// promise resolves.
   static getSkippingParser(until?: Promise<unknown>) {
     return new class extends Parser {
-      startParseInner(
+      createParse(
         input: Input,
         fragments: readonly TreeFragment[],
         ranges: readonly {from: number, to: number}[]

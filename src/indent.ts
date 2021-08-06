@@ -1,5 +1,5 @@
 import {NodeProp, SyntaxNode, Tree} from "@lezer/common"
-import {EditorState, Extension, Transaction, Facet} from "@codemirror/state"
+import {EditorState, Extension, Facet} from "@codemirror/state"
 import {Line, countColumn} from "@codemirror/text"
 import {syntaxTree} from "./language"
 
