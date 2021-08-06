@@ -72,7 +72,7 @@ export class StreamLanguage<State> extends Language {
     let data = defineLanguageFacet(parser.languageData)
     let p = fullParser(parser), self: StreamLanguage<State>
     let impl = new class extends Parser {
-      startParseInner(input: Input, fragments: readonly TreeFragment[], ranges: readonly {from: number, to: number}[]) {
+      createParse(input: Input, fragments: readonly TreeFragment[], ranges: readonly {from: number, to: number}[]) {
         return new Parse(self, input, fragments, ranges)
       }
     }
