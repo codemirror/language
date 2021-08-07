@@ -1,5 +1,3 @@
-import {countColumn} from "@codemirror/text"
-
 // Counts the column offset in a string, taking tabs into account.
 // Used mostly to find indentation.
 function countCol(string: string, end: number | null, tabSize: number, startIndex = 0, startValue = 0): number {
@@ -7,7 +5,12 @@ function countCol(string: string, end: number | null, tabSize: number, startInde
     end = string.search(/[^\s\u00a0]/)
     if (end == -1) end = string.length
   }
-  return countColumn(string.slice(startIndex, end), startValue, tabSize)
+  let n = startValue
+  for (let i = startIndex; i < end; i++) {
+    if (string.charCodeAt(i) == 9) n += tabSize - (n % tabSize)
+    else n++
+  }
+  return n
 }
 
 /// Encapsulates a single line of input. Given to stream syntax code,
