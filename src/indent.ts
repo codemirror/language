@@ -96,8 +96,8 @@ export class IndentContext {
   /// Get the text directly after `pos`, either the entire line
   /// or the next 100 characters, whichever is shorter.
   textAfterPos(pos: number) {
-    let sim = this.options?.simulateBreak
-    if (pos == sim && this.options?.simulateDoubleBreak) return ""
+    let sim = this.options.simulateBreak
+    if (pos == sim && this.options.simulateDoubleBreak) return ""
     return this.state.sliceDoc(pos, Math.min(pos + 100,
                                              sim != null && sim > pos ? sim : 1e9,
                                              this.state.doc.lineAt(pos).to))
@@ -105,22 +105,22 @@ export class IndentContext {
 
   /// Find the column for the given position.
   column(pos: number) {
-    let line = this.state.doc.lineAt(pos), text = line.text.slice(0, pos - line.from)
-    let result = this.countColumn(text, pos - line.from)
-    let override = this.options?.overrideIndentation ? this.options.overrideIndentation(line.from) : -1
-    if (override > -1) result += override - this.countColumn(text, text.search(/\S/))
+    let line = this.state.doc.lineAt(pos)
+    let result = this.countColumn(line.text, pos - line.from)
+    let override = this.options.overrideIndentation ? this.options.overrideIndentation(line.from) : -1
+    if (override > -1) result += override - this.countColumn(line.text, line.text.search(/\S/))
     return result
   }
 
   /// find the column position (taking tabs into account) of the given
   /// position in the given string.
   countColumn(line: string, pos: number) {
-    return countColumn(pos < 0 ? line : line.slice(0, pos), 0, this.state.tabSize)
+    return countColumn(line, this.state.tabSize, pos < 0 ? line.length : pos)
   }
 
   /// Find the indentation column of the given document line.
   lineIndent(line: Line) {
-    let override = this.options?.overrideIndentation
+    let override = this.options.overrideIndentation
     if (override) {
       let overriden = override(line.from)
       if (overriden > -1) return overriden
@@ -158,7 +158,7 @@ function syntaxIndentation(cx: IndentContext, ast: Tree, pos: number) {
 }
 
 function ignoreClosed(cx: TreeIndentContext) {
-  return cx.pos == cx.options?.simulateBreak && cx.options?.simulateDoubleBreak
+  return cx.pos == cx.options.simulateBreak && cx.options.simulateDoubleBreak
 }
 
 function indentStrategy(tree: SyntaxNode): ((context: TreeIndentContext) => number | null) | null {
@@ -240,7 +240,7 @@ function bracketedAligned(context: TreeIndentContext) {
   let tree = context.node
   let openToken = tree.childAfter(tree.from), last = tree.lastChild
   if (!openToken) return null
-  let sim = context.options?.simulateBreak
+  let sim = context.options.simulateBreak
   let openLine = context.state.doc.lineAt(openToken.from)
   let lineEnd = sim == null || sim <= openLine.from ? openLine.to : Math.min(openLine.to, sim)
   for (let pos = openToken.to;;) {
