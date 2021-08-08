@@ -1,6 +1,6 @@
 import {NodeProp, SyntaxNode, Tree} from "@lezer/common"
 import {EditorState, Extension, Facet} from "@codemirror/state"
-import {Line, countColumn} from "@codemirror/text"
+import {countColumn} from "@codemirror/text"
 import {syntaxTree} from "./language"
 
 /// Facet that defines a way to provide a function that computes the
@@ -93,39 +93,63 @@ export class IndentContext {
     this.unit = getIndentUnit(state)
   }
 
+  /// Get a description of the line at the given position, taking
+  /// [simulated line
+  /// breaks](#language.IndentContext.constructor^options.simulateBreak)
+  /// into account. If there is such a break at `pos`, the `bias`
+  /// argument determines whether the part of the line line before or
+  /// after the break is used.
+  lineAt(pos: number, bias: -1 | 1 = 1): {text: string, from: number} {
+    let line = this.state.doc.lineAt(pos)
+    let {simulateBreak} = this.options
+    if (simulateBreak != null && simulateBreak >= line.from && simulateBreak <= line.to) {
+      if (bias < 0 ? simulateBreak < pos : simulateBreak <= pos)
+        return {text: line.text.slice(simulateBreak - line.from), from: simulateBreak}
+      else
+        return {text: line.text.slice(0, simulateBreak - line.from), from: line.from}
+    }
+    return line
+  }
+
   /// Get the text directly after `pos`, either the entire line
   /// or the next 100 characters, whichever is shorter.
-  textAfterPos(pos: number) {
-    let sim = this.options.simulateBreak
-    if (pos == sim && this.options.simulateDoubleBreak) return ""
-    return this.state.sliceDoc(pos, Math.min(pos + 100,
-                                             sim != null && sim > pos ? sim : 1e9,
-                                             this.state.doc.lineAt(pos).to))
+  textAfterPos(pos: number, bias: -1 | 1 = 1) {
+    if (this.options.simulateDoubleBreak && pos == this.options.simulateBreak) return ""
+    let {text, from} = this.lineAt(pos, bias)
+    return text.slice(pos - from, Math.min(text.length, pos + 100 - from))
   }
 
   /// Find the column for the given position.
-  column(pos: number) {
-    let line = this.state.doc.lineAt(pos)
-    let result = this.countColumn(line.text, pos - line.from)
-    let override = this.options.overrideIndentation ? this.options.overrideIndentation(line.from) : -1
-    if (override > -1) result += override - this.countColumn(line.text, line.text.search(/\S/))
+  column(pos: number, bias: -1 | 1 = 1) {
+    let {text, from} = this.lineAt(pos, bias)
+    let result = this.countColumn(text, pos - from)
+    let override = this.options.overrideIndentation ? this.options.overrideIndentation(from) : -1
+    if (override > -1) result += override - this.countColumn(text, text.search(/\S|$/))
     return result
   }
 
-  /// find the column position (taking tabs into account) of the given
+  /// Find the column position (taking tabs into account) of the given
   /// position in the given string.
-  countColumn(line: string, pos: number) {
-    return countColumn(line, this.state.tabSize, pos < 0 ? line.length : pos)
+  countColumn(line: string, pos: number = line.length) {
+    return countColumn(line, this.state.tabSize, pos)
   }
 
-  /// Find the indentation column of the given document line.
-  lineIndent(line: Line) {
+  /// Find the indentation column of the line at the given point.
+  lineIndent(pos: number, bias: -1 | 1 = 1) {
+    let {text, from} = this.lineAt(pos, bias)
     let override = this.options.overrideIndentation
     if (override) {
-      let overriden = override(line.from)
+      let overriden = override(from)
       if (overriden > -1) return overriden
     }
-    return this.countColumn(line.text, line.text.search(/\S/))
+    return this.countColumn(text, text.search(/\S|$/))
+  }
+
+  /// Returns the [simulated line
+  /// break](#language.IndentContext.constructor^options.simulateBreak)
+  /// for this context, if any.
+  get simulatedBreak(): number | null {
+    return this.options.simulateBreak || null
   }
 }
 
@@ -137,7 +161,7 @@ export const indentNodeProp = new NodeProp<(context: TreeIndentContext) => numbe
 
 // Compute the indentation for a given position from the syntax tree.
 function syntaxIndentation(cx: IndentContext, ast: Tree, pos: number) {
-  let tree: SyntaxNode | null = ast.resolve(pos)
+  let tree: SyntaxNode | null = ast.resolveInner(pos)
 
   // Enter previous nodes that end in empty error terms, which means
   // they were broken off by error recovery, so that indentation
@@ -217,7 +241,7 @@ export class TreeIndentContext extends IndentContext {
       if (isParent(atBreak, this.node)) break
       line = this.state.doc.lineAt(atBreak.from)
     }
-    return this.lineIndent(line)
+    return this.lineIndent(line.from)
   }
 
   /// Continue looking for indentations in the node's parent nodes,
