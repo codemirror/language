@@ -269,6 +269,7 @@ export class ParseContext {
 
   /// @internal
   work(time: number, upto?: number) {
+    if (upto != null && upto >= this.state.doc.length) upto = undefined
     if (this.tree != Tree.empty && (upto == null ? this.treeLen == this.state.doc.length : this.treeLen >= upto)) {
       this.takeTree()
       return true
