@@ -117,11 +117,10 @@ export class Language {
 function languageDataFacetAt(state: EditorState, pos: number, side: -1 | 0 | 1) {
   let topLang = state.facet(language)
   if (!topLang) return null
-  if (!topLang.allowsNesting) return topLang.data
-  let node: SyntaxNode | null = syntaxTree(state).topNode, facet
-  while (node) {
-    facet = node.type.prop(languageDataProp) || facet
-    node = node.enter(pos, side, true, false)
+  let facet = topLang.data
+  if (topLang.allowsNesting) {
+    for (let node: SyntaxNode | null = syntaxTree(state).topNode; node; node = node.enter(pos, side, true, false))
+      facet = node.type.prop(languageDataProp) || facet
   }
   return facet
 }
