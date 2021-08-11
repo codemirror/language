@@ -27,7 +27,7 @@ export function defineLanguageFacet(baseData?: {[name: string]: any}) {
 /// [metadata](#state.EditorState.languageDataAt). Parse data is
 /// managed as a [Lezer](https://lezer.codemirror.net) tree. You'll
 /// want to subclass this class for custom parsers, or use the
-/// [`LezerLanguage`](#language.LezerLanguage) or
+/// [`LRLanguage`](#language.LRLanguage) or
 /// [`StreamLanguage`](#stream-parser.StreamLanguage) abstractions for
 /// [Lezer](https://lezer.codemirror.net/) or stream parsers.
 export class Language {
@@ -128,7 +128,7 @@ function languageDataFacetAt(state: EditorState, pos: number, side: -1 | 0 | 1) 
 /// A subclass of [`Language`](#language.Language) for use with Lezer
 /// [LR parsers](https://lezer.codemirror.net/docs/ref#lr.LRParser)
 /// parsers.
-export class LezerLanguage extends Language { // FIXME rename to LRLanguage
+export class LRLanguage extends Language {
   private constructor(data: Facet<{[name: string]: any}>,
                       readonly parser: LRParser) {
     super(data, parser, parser.topNode)
@@ -145,15 +145,15 @@ export class LezerLanguage extends Language { // FIXME rename to LRLanguage
     languageData?: {[name: string]: any}
   }) {
     let data = defineLanguageFacet(spec.languageData)
-    return new LezerLanguage(data, spec.parser.configure({
+    return new LRLanguage(data, spec.parser.configure({
       props: [languageDataProp.add(type => type.isTop ? data : undefined)]
     }))
   }
 
   /// Create a new instance of this language with a reconfigured
   /// version of its parser.
-  configure(options: ParserConfig): LezerLanguage {
-    return new LezerLanguage(this.data, this.parser.configure(options))
+  configure(options: ParserConfig): LRLanguage {
+    return new LRLanguage(this.data, this.parser.configure(options))
   }
 
   get allowsNesting() { return (this.parser as any).wrappers.length > 0 } // FIXME
