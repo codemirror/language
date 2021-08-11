@@ -6,9 +6,9 @@
 
 @language
 
-@EditorParseContext
+@LRLanguage
 
-@LezerLanguage
+@ParseContext
 
 @syntaxTree
 
