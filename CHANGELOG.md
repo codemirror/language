@@ -1,3 +1,11 @@
+## 0.19.2 (2021-08-11)
+
+### Bug fixes
+
+Fix a bug that caused `indentOnInput` to fire for the wrong kinds of transactions.
+
+Fix a bug that could cause `indentOnInput` to apply its changes incorrectly.
+
 ## 0.19.1 (2021-08-11)
 
 ### Bug fixes
