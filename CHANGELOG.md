@@ -1,3 +1,21 @@
+## 0.19.0 (2021-08-11)
+
+### Breaking changes
+
+CodeMirror now uses lezer 0.15, which means different package names (scoped with @lezer) and some breaking changes in the library.
+
+`EditorParseContext` is now called `ParseContext`. It is no longer passed to parsers, but must be retrieved with `ParseContext.get`.
+
+`IndentContext.lineIndent` now takes a position, not a `Line` object, as argument.
+
+`LezerLanguage` was renamed to `LRLanguage` (because all languages must emit Lezer-style trees, the name was misleading).
+
+### New features
+
+New `IndentContext.lineAt` method to access lines in a way that is aware of simulated line breaks.
+
+`IndentContext` now provides a `simulatedBreak` property through which client code can query whether the context has a simulated line break.
+
 ## 0.18.2 (2021-06-01)
 
 ### Bug fixes
