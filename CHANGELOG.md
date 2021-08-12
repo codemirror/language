@@ -24,6 +24,8 @@ CodeMirror now uses lezer 0.15, which means different package names (scoped with
 
 `LezerLanguage` was renamed to `LRLanguage` (because all languages must emit Lezer-style trees, the name was misleading).
 
+`Language.parseString` no longer exists. You can just call `.parser.parse(...)` instead.
+
 ### New features
 
 New `IndentContext.lineAt` method to access lines in a way that is aware of simulated line breaks.
