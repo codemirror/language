@@ -251,7 +251,7 @@ export class ParseContext {
     /// The current editor viewport (or some overapproximation
     /// thereof). Intended to be used for opportunistically avoiding
     /// work (in which case
-    /// [`skipUntilInView`](#language.EditorParseContext.skipUntilInView)
+    /// [`skipUntilInView`](#language.ParseContext.skipUntilInView)
     /// should be called to make sure the parser is restarted when the
     /// skipped region becomes visible).
     public viewport: {from: number, to: number},
