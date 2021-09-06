@@ -141,7 +141,8 @@ function cutTree(lang: StreamLanguage<unknown>, tree: Tree, from: number, to: nu
 function findStartInFragments<State>(lang: StreamLanguage<State>, fragments: readonly TreeFragment[],
                                      startPos: number, editorState?: EditorState) {
   for (let f of fragments) {
-    let found = f.from <= startPos && f.to > startPos && findState(lang, f.tree, 0 - f.offset, startPos, f.to), tree
+    let from = f.from + (f.openStart ? 25 : 0), to = f.to - (f.openEnd ? 25 : 0)
+    let found = from <= startPos && to > startPos && findState(lang, f.tree, 0 - f.offset, startPos, to), tree
     if (found && (tree = cutTree(lang, f.tree, startPos + f.offset, found.pos + f.offset, false)))
       return {state: found.state, tree}
   }
