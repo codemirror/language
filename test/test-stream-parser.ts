@@ -20,6 +20,7 @@ const language = StreamLanguage.define<{count: number}>({
     if (stream.match(/^\d+/)) return "number"
     if (stream.match(/^\w+/)) return keywords.indexOf(stream.current()) >= 0 ? "keyword" : "variableName"
     if (stream.match(/^[();{}]/)) return "punctuation"
+    stream.next()
     return "invalid"
   },
 
