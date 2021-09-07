@@ -270,7 +270,7 @@ export class ParseContext {
   /// @internal
   work(time: number, upto?: number) {
     if (upto != null && upto >= this.state.doc.length) upto = undefined
-    if (this.tree != Tree.empty && (upto == null ? this.treeLen == this.state.doc.length : this.treeLen >= upto)) {
+    if (this.tree != Tree.empty && this.isDone(upto ?? this.state.doc.length)) {
       this.takeTree()
       return true
     }
@@ -345,6 +345,7 @@ export class ParseContext {
 
   /// @internal
   updateViewport(viewport: {from: number, to: number}) {
+    if (this.viewport.from == viewport.from && this.viewport.to == viewport.to) return false
     this.viewport = viewport
     let startLen = this.skipped.length
     for (let i = 0; i < this.skipped.length; i++) {
@@ -354,7 +355,9 @@ export class ParseContext {
         this.skipped.splice(i--, 1)
       }
     }
-    return this.skipped.length < startLen
+    if (this.skipped.length >= startLen) return false
+    this.reset()
+    return true
   }
 
   /// @internal
@@ -409,6 +412,12 @@ export class ParseContext {
   /// @internal
   movedPast(pos: number) {
     return this.treeLen < pos && this.parse && this.parse.parsedPos >= pos
+  }
+
+  /// @internal
+  isDone(upto: number) {
+    let frags = this.fragments
+    return this.treeLen >= upto && frags.length && frags[0].from == 0 && frags[0].to >= upto
   }
 
   /// Get the context for the current parse, or `null` if no editor
@@ -484,10 +493,8 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
 
   update(update: ViewUpdate) {
     let cx = this.view.state.field(Language.state).context
-    if (update.viewportChanged) {
-      if (cx.updateViewport(update.view.viewport)) cx.reset()
-      if (this.view.viewport.to > cx.treeLen) this.scheduleWork()
-    }
+    if (cx.updateViewport(update.view.viewport) || this.view.viewport.to > cx.treeLen)
+      this.scheduleWork()
     if (update.docChanged) {
       if (this.view.hasFocus) this.chunkBudget += Work.ChangeBonus
       this.scheduleWork()
@@ -497,10 +504,9 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
 
   scheduleWork() {
     if (this.working > -1) return
-    let {state} = this.view, field = state.field(Language.state), frags = field.context.fragments
-    if (field.tree == field.context.tree && field.context.treeLen >= state.doc.length &&
-        frags.length && frags[0].from == 0 && frags[0].to >= state.doc.length) return
-    this.working = requestIdle(this.work, {timeout: Work.Pause})
+    let {state} = this.view, field = state.field(Language.state)
+    if (field.tree != field.context.tree || !field.context.isDone(state.doc.length))
+      this.working = requestIdle(this.work, {timeout: Work.Pause})
   }
 
   work(deadline?: Deadline) {
