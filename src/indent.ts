@@ -161,24 +161,7 @@ export const indentNodeProp = new NodeProp<(context: TreeIndentContext) => numbe
 
 // Compute the indentation for a given position from the syntax tree.
 function syntaxIndentation(cx: IndentContext, ast: Tree, pos: number) {
-  let tree: SyntaxNode | null = ast.resolveInner(pos)
-
-  // Enter previous nodes that end in empty error terms, which means
-  // they were broken off by error recovery, so that indentation
-  // works even if the constructs haven't been finished.
-  for (let scan = tree!, scanPos = pos;;) {
-    let last = scan.childBefore(scanPos)
-    if (!last) break
-    if (last.type.isError && last.from == last.to) {
-      tree = scan
-      scanPos = last.from
-    } else {
-      scan = last
-      scanPos = scan.to + 1
-    }
-  }
-
-  return indentFrom(tree, pos, cx)
+  return indentFrom(ast.resolveInner(pos).enterUnfinishedNodesBefore(pos), pos, cx)
 }
 
 function ignoreClosed(cx: TreeIndentContext) {
