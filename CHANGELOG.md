@@ -1,3 +1,9 @@
+## 0.19.3 (2021-09-13)
+
+### Bug fixes
+
+Fix an issue where a parse that skipped content with `skipUntilInView` would in some cases not be restarted when the range came into view.
+
 ## 0.19.2 (2021-08-11)
 
 ### Bug fixes
