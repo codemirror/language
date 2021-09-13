@@ -304,7 +304,7 @@ const baseTheme = EditorView.baseTheme({
     cursor: "pointer"
   },
 
-  ".cm-foldGutter .cm-gutterElement": {
+  ".cm-foldGutter span": {
     padding: "0 1px",
     cursor: "pointer"
   }
