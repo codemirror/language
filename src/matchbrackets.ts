@@ -106,11 +106,12 @@ export interface MatchResult {
 /// bracket was found at `pos`, or a match result otherwise.
 export function matchBrackets(state: EditorState, pos: number, dir: -1 | 1, config: Config = {}): MatchResult | null {
   let maxScanDistance = config.maxScanDistance || DefaultScanDist, brackets = config.brackets || DefaultBrackets
-  let tree = syntaxTree(state), sub = tree.resolve(pos, dir), matches
-  if (matches = matchingNodes(sub.type, dir, brackets))
-    return matchMarkedBrackets(state, pos, dir, sub, matches, brackets)
-  else
-    return matchPlainBrackets(state, pos, dir, tree, sub.type, maxScanDistance, brackets)
+  let tree = syntaxTree(state), node = tree.resolveInner(pos, dir)
+  for (let cur: SyntaxNode | null = node; cur; cur = cur.parent) {
+    let matches = matchingNodes(cur.type, dir, brackets)
+    if (matches) return matchMarkedBrackets(state, pos, dir, cur, matches, brackets)
+  }
+  return matchPlainBrackets(state, pos, dir, tree, node.type, maxScanDistance, brackets)
 }
 
 function matchMarkedBrackets(_state: EditorState, _pos: number, dir: -1 | 1, token: SyntaxNode,
