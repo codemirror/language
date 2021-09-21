@@ -22,8 +22,8 @@ export interface Config {
 }
 
 const baseTheme = EditorView.baseTheme({
-  ".cm-matchingBracket": {color: "#0b0"},
-  ".cm-nonmatchingBracket": {color: "#a22"}
+  ".cm-matchingBracket": {backgroundColor: "#328c8252"},
+  ".cm-nonmatchingBracket": {backgroundColor: "#bb555544"}
 })
 
 const DefaultScanDist = 10000, DefaultBrackets = "()[]{}"
