@@ -109,7 +109,7 @@ export function matchBrackets(state: EditorState, pos: number, dir: -1 | 1, conf
   let tree = syntaxTree(state), node = tree.resolveInner(pos, dir)
   for (let cur: SyntaxNode | null = node; cur; cur = cur.parent) {
     let matches = matchingNodes(cur.type, dir, brackets)
-    if (matches) return matchMarkedBrackets(state, pos, dir, cur, matches, brackets)
+    if (matches && cur.from < cur.to) return matchMarkedBrackets(state, pos, dir, cur, matches, brackets)
   }
   return matchPlainBrackets(state, pos, dir, tree, node.type, maxScanDistance, brackets)
 }
@@ -120,13 +120,17 @@ function matchMarkedBrackets(_state: EditorState, _pos: number, dir: -1 | 1, tok
   let depth = 0, cursor = parent?.cursor
   if (cursor && (dir < 0 ? cursor.childBefore(token.from) : cursor.childAfter(token.to))) do {
     if (dir < 0 ? cursor.to <= token.from : cursor.from >= token.to) {
-      if (depth == 0 && matching.indexOf(cursor.type.name) > -1) {
+      if (depth == 0 && matching.indexOf(cursor.type.name) > -1 && cursor.from < cursor.to) {
         return {start: firstToken, end: {from: cursor.from, to: cursor.to}, matched: true}
       } else if (matchingNodes(cursor.type, dir, brackets)) {
         depth++
       } else if (matchingNodes(cursor.type, -dir as -1 | 1, brackets)) {
         depth--
-        if (depth == 0) return {start: firstToken, end: {from: cursor.from, to: cursor.to}, matched: false}
+        if (depth == 0) return {
+          start: firstToken,
+          end: cursor.from == cursor.to ? undefined : {from: cursor.from, to: cursor.to},
+          matched: false
+        }
       }
     }
   } while (dir < 0 ? cursor.prevSibling() : cursor.nextSibling())
