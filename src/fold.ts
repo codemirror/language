@@ -150,9 +150,14 @@ export const foldKeymap: readonly KeyBinding[] = [
 
 interface FoldConfig {
   /// A function that creates the DOM element used to indicate the
-  /// position of folded code. When not given, the `placeholderText`
-  /// option will be used instead.
-  placeholderDOM?: (() => HTMLElement) | null,
+  /// position of folded code. The `onclick` argument is the default
+  /// click event handler, which toggles folding on the line that
+  /// holds the element, and should probably be added as an event
+  /// handler to the returned element.
+  ///
+  /// When this option isn't given, the `placeholderText` option will
+  /// be used to create the placeholder element.
+  placeholderDOM?: ((view: EditorView, onclick: (event: Event) => void) => HTMLElement) | null,
   /// Text to use as placeholder for folded text. Defaults to `"…"`.
   /// Will be styled with the `"cm-foldPlaceholder"` class.
   placeholderText?: string
@@ -179,19 +184,19 @@ const foldWidget = Decoration.replace({widget: new class extends WidgetType {
 
   toDOM(view: EditorView) {
     let {state} = view, conf = state.facet(foldConfig)
-    if (conf.placeholderDOM) return conf.placeholderDOM()
-    let element = document.createElement("span")
-    element.textContent = conf.placeholderText
-    element.setAttribute("aria-label", state.phrase("folded code"))
-    element.title = state.phrase("unfold")
-    element.className = "cm-foldPlaceholder"
-
-    element.onclick = event => {
+    let onclick = (event: Event) => {
       let line = view.visualLineAt(view.posAtDOM(event.target as HTMLElement))
       let folded = foldInside(view.state, line.from, line.to)
       if (folded) view.dispatch({effects: unfoldEffect.of(folded)})
       event.preventDefault()
     }
+    if (conf.placeholderDOM) return conf.placeholderDOM(view, onclick)
+    let element = document.createElement("span")
+    element.textContent = conf.placeholderText
+    element.setAttribute("aria-label", state.phrase("folded code"))
+    element.title = state.phrase("unfold")
+    element.className = "cm-foldPlaceholder"
+    element.onclick = onclick
     return element
   }
 }})
