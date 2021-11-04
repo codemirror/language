@@ -152,7 +152,8 @@ function findStartInFragments<State>(lang: StreamLanguage<State>, fragments: rea
 const enum C {
   ChunkSize = 2048,
   MaxDistanceBeforeViewport = 1e5,
-  MaxIndentScanDist = 1e4
+  MaxIndentScanDist = 1e4,
+  MaxLineLength = 1e4
 }
 
 class Parse<State> implements PartialParse {
@@ -266,6 +267,7 @@ class Parse<State> implements PartialParse {
         let token = readToken(streamParser.token, stream, this.state)
         if (token)
           offset = this.emitToken(tokenID(token), this.parsedPos + stream.start, this.parsedPos + stream.pos, 4, offset)
+        if (stream.start > C.MaxLineLength) break
       }
     }
     this.parsedPos = end
