@@ -1,3 +1,9 @@
+## 0.19.4 (2021-11-13)
+
+### New features
+
+`LanguageDescription.of` now takes an optional already-loaded extension.
+
 ## 0.19.3 (2021-09-13)
 
 ### Bug fixes
