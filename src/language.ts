@@ -1,8 +1,6 @@
 import {Tree, SyntaxNode, ChangedRange, TreeFragment, NodeProp, NodeType, Input,
         PartialParse, Parser} from "@lezer/common"
-// NOTE: This package should only use _types_ from @lezer/lr, to avoid
-// pulling in that dependency when no actual LR parser is used.
-import {LRParser, ParserConfig} from "@lezer/lr"
+import type {LRParser, ParserConfig} from "@lezer/lr"
 import {Text, TextIterator} from "@codemirror/text"
 import {EditorState, StateField, Transaction, Extension, StateEffect, Facet, ChangeDesc} from "@codemirror/state"
 import {ViewPlugin, ViewUpdate, EditorView} from "@codemirror/view"
@@ -582,9 +580,6 @@ export class LanguageSupport {
 /// appropriate language for a filename or dynamically loading nested
 /// parsers.
 export class LanguageDescription {
-  /// If the language has been loaded, this will hold its value.
-  support: LanguageSupport | undefined = undefined
-
   private loading: Promise<LanguageSupport> | null = null
 
   private constructor(
@@ -597,7 +592,9 @@ export class LanguageDescription {
     /// Optional filename pattern that should be associated with this
     /// language.
     readonly filename: RegExp | undefined,
-    private loadFunc: () => Promise<LanguageSupport>
+    private loadFunc: () => Promise<LanguageSupport>,
+    /// If the language has been loaded, this will hold its value.
+    public support: LanguageSupport | undefined = undefined
   ) {}
 
   /// Start loading the the language. Will return a promise that
@@ -616,15 +613,24 @@ export class LanguageDescription {
     name: string,
     /// An optional array of alternative names.
     alias?: readonly string[],
-    /// An optional array of extensions associated with this language.
+    /// An optional array of filename extensions associated with this
+    /// language.
     extensions?: readonly string[],
     /// An optional filename pattern associated with this language.
     filename?: RegExp,
     /// A function that will asynchronously load the language.
-    load: () => Promise<LanguageSupport>
+    load?: () => Promise<LanguageSupport>,
+    /// Alternatively to `load`, you can provide an already loaded
+    /// support object. Either this or `load` should be provided.
+    support?: LanguageSupport
   }) {
+    let {load, support} = spec
+    if (!load) {
+      if (!support) throw new RangeError("Must pass either 'load' or 'support' to LanguageDescription.of")
+      load = () => Promise.resolve(support!)
+    }
     return new LanguageDescription(spec.name, (spec.alias || []).concat(spec.name).map(s => s.toLowerCase()),
-                                   spec.extensions || [], spec.filename, spec.load)
+                                   spec.extensions || [], spec.filename, load, support)
   }
 
   /// Look for a language in the given array of descriptions that
