@@ -1,3 +1,11 @@
+## 0.19.5 (2021-11-17)
+
+### New features
+
+The new function `syntaxTreeAvailable` can be used to check if a fully-parsed syntax tree is available up to a given document position.
+
+The module now exports `syntaxParserRunning`, which tells you whether the background parser is still planning to do more work for a given editor view.
+
 ## 0.19.4 (2021-11-13)
 
 ### New features
