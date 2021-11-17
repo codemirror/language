@@ -14,6 +14,10 @@
 
 @ensureSyntaxTree
 
+@syntaxTreeAvailable
+
+@syntaxParserRunning
+
 @LanguageSupport
 
 @LanguageDescription

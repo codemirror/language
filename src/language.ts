@@ -3,7 +3,7 @@ import {Tree, SyntaxNode, ChangedRange, TreeFragment, NodeProp, NodeType, Input,
 import type {LRParser, ParserConfig} from "@lezer/lr"
 import {Text, TextIterator} from "@codemirror/text"
 import {EditorState, StateField, Transaction, Extension, StateEffect, Facet, ChangeDesc} from "@codemirror/state"
-import {ViewPlugin, ViewUpdate, EditorView} from "@codemirror/view"
+import {ViewPlugin, ViewUpdate, EditorView, logException} from "@codemirror/view"
 
 /// Node prop stored in a grammar's top syntax node to provide the
 /// facet that stores language data for that language.
@@ -171,6 +171,26 @@ export function syntaxTree(state: EditorState): Tree {
 export function ensureSyntaxTree(state: EditorState, upto: number, timeout = 50): Tree | null {
   let parse = state.field(Language.state, false)?.context
   return !parse ? null : parse.treeLen >= upto || parse.work(timeout, upto) ? parse.tree : null
+}
+
+/// Queries whether there is a full syntax tree available up to the
+/// given document position. If there isn't, the background parse
+/// process _might_ still be working and update the tree further, but
+/// there is no guarantee of that—the parser will [stop
+/// working](#language.syntaxParserStopped) when it has spent a
+/// certain amount of time or has moved beyond the visible viewport.
+/// Always returns false if no language has been enabled.
+export function syntaxTreeAvailable(state: EditorState, upto = state.doc.length) {
+  return state.field(Language.state, false)?.context.isDone(upto) || false
+}
+
+/// Tells you whether the language parser is planning to do more
+/// parsing work (in a `requestIdleCallback` pseudo-thread) or has
+/// stopped running, either because it parsed the entire document,
+/// because it spent too much time and was cut off, or because there
+/// is no language parser enabled.
+export function syntaxParserRunning(view: EditorView) {
+  return view.plugin(parseWorker)?.isWorking() || false
 }
 
 // Lezer-style Input object for a Text document.
@@ -478,7 +498,8 @@ let requestIdle: (callback: IdleCallback, options: {timeout: number}) => number 
 let cancelIdle: (id: number) => void = typeof window != "undefined" && (window as any).cancelIdleCallback || clearTimeout
 
 const parseWorker = ViewPlugin.fromClass(class ParseWorker {
-  working: number = -1
+  working = -1
+  workScheduled = 0
   // End of the current time chunk
   chunkEnd = -1
   // Milliseconds of budget left for this chunk
@@ -532,13 +553,21 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
 
   checkAsyncSchedule(cx: ParseContext) {
     if (cx.scheduleOn) {
-      cx.scheduleOn.then(() => this.scheduleWork())
+      this.workScheduled++
+      cx.scheduleOn
+        .then(() => this.scheduleWork())
+        .catch(err => logException(this.view.state, err))
+        .then(() => this.workScheduled--)
       cx.scheduleOn = null
     }
   }
 
   destroy() {
     if (this.working >= 0) cancelIdle(this.working)
+  }
+
+  isWorking() {
+    return this.working >= 0 || this.workScheduled > 0
   }
 }, {
   eventHandlers: {focus() { this.scheduleWork() }}
