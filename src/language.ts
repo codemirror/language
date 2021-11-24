@@ -317,7 +317,7 @@ export class ParseContext {
   /// @internal
   takeTree() {
     let pos, tree: Tree | undefined | null
-    if (this.parse && (pos = this.parse.parsedPos) > this.treeLen) {
+    if (this.parse && (pos = this.parse.parsedPos) >= this.treeLen) {
       if (this.parse.stoppedAt == null || this.parse.stoppedAt > pos) this.parse.stopAt(pos)
       this.withContext(() => { while (!(tree = this.parse!.advance())) {} })
       this.tree = tree!
