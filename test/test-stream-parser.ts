@@ -11,7 +11,7 @@ const language = StreamLanguage.define<{count: number}>({
     startStates++
     return {count: 0}
   },
-  
+
   token(stream, state) {
     if (stream.eatSpace()) return null
     state.count++
@@ -40,11 +40,9 @@ describe("StreamLanguage", () => {
       doc: "// filler content\nif (a) foo()\nelse if (b) bar()\nelse quux()\n\n".repeat(100),
       extensions: language
     })
-    
-    ist(ensureSyntaxTree(state, state.doc.length, 1000)?.length, state.doc.length)
+
     startStates = 0
     state = state.update({changes: {from: 5000, to: 5001}}).state
-    ist(ensureSyntaxTree(state, state.doc.length, 1000)?.length, state.doc.length)
     ist(startStates, 0)
   })
 
