@@ -1,7 +1,7 @@
 import ist from "ist"
 import {StreamLanguage} from "@codemirror/stream-parser"
 import {EditorState} from "@codemirror/state"
-import {syntaxTree, getIndentation, Language} from "@codemirror/language"
+import {syntaxTree, ensureSyntaxTree, getIndentation, Language} from "@codemirror/language"
 import {SyntaxNode} from "@lezer/common"
 
 let startStates = 0, keywords = ["if", "else", "return"]
@@ -40,10 +40,11 @@ describe("StreamLanguage", () => {
       doc: "// filler content\nif (a) foo()\nelse if (b) bar()\nelse quux()\n\n".repeat(100),
       extensions: language
     })
-    ist(syntaxTree(state).length, state.doc.length)
+    
+    ist(ensureSyntaxTree(state, state.doc.length, 1000)?.length, state.doc.length)
     startStates = 0
     state = state.update({changes: {from: 5000, to: 5001}}).state
-    ist(syntaxTree(state).length, state.doc.length)
+    ist(ensureSyntaxTree(state, state.doc.length, 1000)?.length, state.doc.length)
     ist(startStates, 0)
   })
 
@@ -70,18 +71,20 @@ describe("StreamLanguage", () => {
     let state = EditorState.create({doc: line.repeat(100), extensions: language})
     setViewport(state, 4000, 8000)
     state = state.update({changes: {from: 3000, insert: line.repeat(10000)}}).state
+    let tree = ensureSyntaxTree(state, state.doc.length, 5000)!
     // No nodes in the skipped range
-    ist(syntaxTree(state).resolve(10000, 1).name, "Document")
+    ist(tree.resolve(10000, 1).name, "Document")
     // But the viewport is populated
-    ist(syntaxTree(state).resolve(805000, 1).name, "number")
+    ist(tree.resolve(805000, 1).name, "number")
     let treeSize = 0
-    syntaxTree(state).iterate({enter() { treeSize++ }})
+    tree.iterate({enter() { treeSize++ }})
     ist(treeSize, 2000, ">")
     ist(treeSize, 4000, "<")
     setViewport(state, 4000, 8000)
     state = state.update({changes: {from: 100000, insert: "?"}}).state
-    ist(syntaxTree(state).resolve(5000, 1).name, "number")
-    ist(syntaxTree(state).resolve(50000, 1).name, "Document")
+    tree = ensureSyntaxTree(state, state.doc.length, 5000)!
+    ist(tree.resolve(5000, 1).name, "number")
+    ist(tree.resolve(50000, 1).name, "Document")
   })
 
   it("doesn't parse beyond the viewport", () => {
