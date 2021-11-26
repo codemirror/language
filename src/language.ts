@@ -247,7 +247,10 @@ const enum Work {
   // editors to continue doing work).
   ChangeBonus = 50,
   // Don't eagerly parse this far beyond the end of the viewport
-  MaxParseAhead = 1e5
+  MaxParseAhead = 1e5,
+  // When initializing the state field (before viewport info is
+  // available), pretend the viewport goes from 0 to here.
+  InitViewport = 3000,
 }
 
 let currentContext: ParseContext | null = null
@@ -471,9 +474,10 @@ class LanguageState {
   }
 
   static init(state: EditorState) {
+    let vpTo = Math.min(Work.InitViewport, state.doc.length)
     let parseState = new ParseContext(state.facet(language)!.parser, state, [],
-                                      Tree.empty, 0, {from: 0, to: state.doc.length}, [], null)
-    if (!parseState.work(Work.Apply)) parseState.takeTree()
+                                      Tree.empty, 0, {from: 0, to: vpTo}, [], null)
+    if (!parseState.work(Work.Apply, vpTo)) parseState.takeTree()
     return new LanguageState(parseState)
   }
 }
