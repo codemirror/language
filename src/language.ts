@@ -227,13 +227,15 @@ class DocInput implements Input {
 
 const enum Work {
   // Milliseconds of work time to perform immediately for a state doc change
-  Apply = 25,
+  Apply = 20,
   // Minimum amount of work time to perform in an idle callback
   MinSlice = 25,
   // Amount of work time to perform in pseudo-thread when idle callbacks aren't supported
   Slice = 100,
+  // Minimum pause between pseudo-thread slices
+  MinPause = 100,
   // Maximum pause (timeout) for the pseudo-thread
-  Pause = 500,
+  MaxPause = 500,
   // Parse time budgets are assigned per chunk—the parser can run for
   // ChunkBudget milliseconds at most during ChunkTime milliseconds.
   // After that, no further background parsing is scheduled until the
@@ -245,7 +247,7 @@ const enum Work {
   // editors to continue doing work).
   ChangeBonus = 50,
   // Don't eagerly parse this far beyond the end of the viewport
-  MaxParseAhead = 1e6
+  MaxParseAhead = 1e5
 }
 
 let currentContext: ParseContext | null = null
@@ -293,10 +295,10 @@ export class ParseContext {
       return true
     }
     return this.withContext(() => {
+      let endTime = Date.now() + time
       if (!this.parse) this.parse = this.startParse()
       if (upto != null && (this.parse.stoppedAt == null || this.parse.stoppedAt > upto) &&
           upto < this.state.doc.length) this.parse.stopAt(upto)
-      let endTime = Date.now() + time
       for (;;) {
         let done = this.parse.advance()
         if (done) {
@@ -320,6 +322,7 @@ export class ParseContext {
     if (this.parse && (pos = this.parse.parsedPos) >= this.treeLen) {
       if (this.parse.stoppedAt == null || this.parse.stoppedAt > pos) this.parse.stopAt(pos)
       this.withContext(() => { while (!(tree = this.parse!.advance())) {} })
+      this.treeLen = pos
       this.tree = tree!
       this.fragments = this.withoutTempSkipped(TreeFragment.addTree(this.tree, this.fragments, true))
       this.parse = null
@@ -428,11 +431,6 @@ export class ParseContext {
   }
 
   /// @internal
-  movedPast(pos: number) {
-    return this.treeLen < pos && this.parse && this.parse.parsedPos >= pos
-  }
-
-  /// @internal
   isDone(upto: number) {
     let frags = this.fragments
     return this.treeLen >= upto && frags.length && frags[0].from == 0 && frags[0].to >= upto
@@ -489,16 +487,20 @@ Language.state = StateField.define<LanguageState>({
   }
 })
 
-type Deadline = {timeRemaining(): number, didTimeout: boolean}
-type IdleCallback = (deadline?: Deadline) => void
+let requestIdle = (callback: (deadline?: IdleDeadline) => void) => {
+  let timeout = setTimeout(() => callback(), Work.MaxPause)
+  return () => clearTimeout(timeout)
+}
 
-let requestIdle: (callback: IdleCallback, options: {timeout: number}) => number =
-  typeof window != "undefined" && (window as any).requestIdleCallback ||
-  ((callback: IdleCallback, {timeout}: {timeout: number}) => setTimeout(callback, timeout))
-let cancelIdle: (id: number) => void = typeof window != "undefined" && (window as any).cancelIdleCallback || clearTimeout
+if (typeof requestIdleCallback != "undefined") requestIdle = (callback: (deadline?: IdleDeadline) => void) => {
+  let idle = -1, timeout = setTimeout(() => {
+    idle = requestIdleCallback(callback, {timeout: Work.MaxPause - Work.MinPause})
+  }, Work.MinPause)
+  return () => idle < 0 ? clearTimeout(timeout) : cancelIdleCallback(idle)
+}
 
 const parseWorker = ViewPlugin.fromClass(class ParseWorker {
-  working = -1
+  working: (() => void) | null = null
   workScheduled = 0
   // End of the current time chunk
   chunkEnd = -1
@@ -522,14 +524,14 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
   }
 
   scheduleWork() {
-    if (this.working > -1) return
+    if (this.working) return
     let {state} = this.view, field = state.field(Language.state)
     if (field.tree != field.context.tree || !field.context.isDone(state.doc.length))
-      this.working = requestIdle(this.work, {timeout: Work.Pause})
+      this.working = requestIdle(this.work)
   }
 
-  work(deadline?: Deadline) {
-    this.working = -1
+  work(deadline?: IdleDeadline) {
+    this.working = null
 
     let now = Date.now()
     if (this.chunkEnd < now && (this.chunkEnd < 0 || this.view.hasFocus)) { // Start a new chunk
@@ -540,14 +542,15 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
 
     let {state, viewport: {to: vpTo}} = this.view, field = state.field(Language.state)
     if (field.tree == field.context.tree && field.context.treeLen >= vpTo + Work.MaxParseAhead) return
-    let time = Math.min(this.chunkBudget, deadline ? Math.max(Work.MinSlice, deadline.timeRemaining()) : Work.Slice)
-    let done = field.context.work(time, vpTo + Work.MaxParseAhead)
+    let time = Math.min(this.chunkBudget, Work.Slice, deadline ? Math.max(Work.MinSlice, deadline.timeRemaining() - 5) : 1e9)
+    let viewportFirst = field.context.treeLen < vpTo && state.doc.length > vpTo + 1000
+    let done = field.context.work(time, vpTo + (viewportFirst ? 0 : Work.MaxParseAhead))
     this.chunkBudget -= Date.now() - now
-    if (done || this.chunkBudget <= 0 || field.context.movedPast(vpTo)) {
+    if (done || this.chunkBudget <= 0) {
       field.context.takeTree()
       this.view.dispatch({effects: Language.setState.of(new LanguageState(field.context))})
     }
-    if (!done && this.chunkBudget > 0) this.scheduleWork()
+    if (this.chunkBudget > 0 && !(done && !viewportFirst)) this.scheduleWork()
     this.checkAsyncSchedule(field.context)
   }
 
@@ -563,11 +566,11 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
   }
 
   destroy() {
-    if (this.working >= 0) cancelIdle(this.working)
+    if (this.working) this.working()
   }
 
   isWorking() {
-    return this.working >= 0 || this.workScheduled > 0
+    return this.working || this.workScheduled > 0
   }
 }, {
   eventHandlers: {focus() { this.scheduleWork() }}
