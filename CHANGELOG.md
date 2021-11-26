@@ -1,3 +1,11 @@
+## 0.19.6 (2021-11-26)
+
+### Bug fixes
+
+Fixes an issue where the background parse work would be scheduled too aggressively, degrading responsiveness on a newly-created editor with a large document.
+
+Improve initial highlight for mixed-language editors and limit the amount of parsing done on state creation for faster startup.
+
 ## 0.19.5 (2021-11-17)
 
 ### New features
