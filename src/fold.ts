@@ -26,7 +26,7 @@ function selectedLines(view: EditorView) {
   let lines: BlockInfo[] = []
   for (let {head} of view.state.selection.ranges) {
     if (lines.some(l => l.from <= head && l.to >= head)) continue
-    lines.push(view.visualLineAt(head))
+    lines.push(view.lineBlockAt(head))
   }
   return lines
 }
@@ -117,9 +117,9 @@ function announceFold(view: EditorView, range: {from: number, to: number}, fold 
 export const foldAll: Command = view => {
   let {state} = view, effects = []
   for (let pos = 0; pos < state.doc.length;) {
-    let line = view.visualLineAt(pos), range = foldable(state, line.from, line.to)
+    let line = view.lineBlockAt(pos), range = foldable(state, line.from, line.to)
     if (range) effects.push(foldEffect.of(range))
-    pos = (range ? view.visualLineAt(range.to) : line).to + 1
+    pos = (range ? view.lineBlockAt(range.to) : line).to + 1
   }
   if (effects.length) view.dispatch({effects: maybeEnable(view.state, effects)})
   return !!effects.length
@@ -185,7 +185,7 @@ const foldWidget = Decoration.replace({widget: new class extends WidgetType {
   toDOM(view: EditorView) {
     let {state} = view, conf = state.facet(foldConfig)
     let onclick = (event: Event) => {
-      let line = view.visualLineAt(view.posAtDOM(event.target as HTMLElement))
+      let line = view.lineBlockAt(view.posAtDOM(event.target as HTMLElement))
       let folded = foldInside(view.state, line.from, line.to)
       if (folded) view.dispatch({effects: unfoldEffect.of(folded)})
       event.preventDefault()
@@ -261,11 +261,11 @@ export function foldGutter(config: FoldGutterConfig = {}): Extension {
 
     buildMarkers(view: EditorView) {
       let builder = new RangeSetBuilder<FoldMarker>()
-      view.viewportLines(line => {
+      for (let line of view.viewportLineBlocks) {
         let mark = foldInside(view.state, line.from, line.to) ? canUnfold
           : foldable(view.state, line.from, line.to) ? canFold : null
         if (mark) builder.add(line.from, line.from, mark)
-      })
+      }
       return builder.finish()
     }
   })
