@@ -180,8 +180,6 @@ export function codeFolding(config?: FoldConfig): Extension {
 }
 
 const foldWidget = Decoration.replace({widget: new class extends WidgetType {
-  ignoreEvents() { return false }
-
   toDOM(view: EditorView) {
     let {state} = view, conf = state.facet(foldConfig)
     let onclick = (event: Event) => {
