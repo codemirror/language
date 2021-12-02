@@ -170,7 +170,7 @@ export function syntaxTree(state: EditorState): Tree {
 /// up to that point if the tree isn't already available.
 export function ensureSyntaxTree(state: EditorState, upto: number, timeout = 50): Tree | null {
   let parse = state.field(Language.state, false)?.context
-  return !parse ? null : parse.treeLen >= upto || parse.work(timeout, upto) ? parse.tree : null
+  return !parse ? null : parse.isDone(upto) || parse.work(timeout, upto) ? parse.tree : null
 }
 
 /// Queries whether there is a full syntax tree available up to the
@@ -435,6 +435,7 @@ export class ParseContext {
 
   /// @internal
   isDone(upto: number) {
+    upto = Math.min(upto, this.state.doc.length)
     let frags = this.fragments
     return this.treeLen >= upto && frags.length && frags[0].from == 0 && frags[0].to >= upto
   }
@@ -545,7 +546,7 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
     if (this.chunkBudget <= 0) return // No more budget
 
     let {state, viewport: {to: vpTo}} = this.view, field = state.field(Language.state)
-    if (field.tree == field.context.tree && field.context.treeLen >= vpTo + Work.MaxParseAhead) return
+    if (field.tree == field.context.tree && field.context.isDone(vpTo + Work.MaxParseAhead)) return
     let time = Math.min(this.chunkBudget, Work.Slice, deadline ? Math.max(Work.MinSlice, deadline.timeRemaining() - 5) : 1e9)
     let viewportFirst = field.context.treeLen < vpTo && state.doc.length > vpTo + 1000
     let done = field.context.work(time, vpTo + (viewportFirst ? 0 : Work.MaxParseAhead))
