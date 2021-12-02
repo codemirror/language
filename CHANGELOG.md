@@ -1,3 +1,9 @@
+## 0.19.7 (2021-12-02)
+
+### Bug fixes
+
+Fix an issue where the parse worker could incorrectly stop working when the parse tree has skipped gaps in it.
+
 ## 0.19.6 (2021-11-26)
 
 ### Bug fixes
