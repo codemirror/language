@@ -196,7 +196,7 @@ class Parse<State> implements PartialParse {
     while (this.parsedPos < end) this.parseLine(context)
     if (this.chunkStart < this.parsedPos) this.finishChunk()
     if (this.parsedPos >= parseEnd) return this.finish()
-    if (context && this.parsedPos > context.viewport.to) {
+    if (context && this.parsedPos >= context.viewport.to) {
       context.skipUntilInView(this.parsedPos, parseEnd)
       return this.finish()
     }
