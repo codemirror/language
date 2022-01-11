@@ -37,6 +37,10 @@ export interface StreamParser<State> {
   /// Default [language data](#state.EditorState.languageDataAt) to
   /// attach to this language.
   languageData?: {[name: string]: any}
+  /// Extra tokens to use in this parser. When the tokenizer returns a
+  /// token name that exists as a property in this object, the
+  /// corresponding tag will be assigned to the token.
+  tokenTable?: {[name: string]: Tag}
 }
 
 function fullParser<State>(spec: StreamParser<State>): Required<StreamParser<State>> {
@@ -46,7 +50,8 @@ function fullParser<State>(spec: StreamParser<State>): Required<StreamParser<Sta
     startState: spec.startState || (() => (true as any)),
     copyState: spec.copyState || defaultCopyState,
     indent: spec.indent || (() => null),
-    languageData: spec.languageData || {}
+    languageData: spec.languageData || {},
+    tokenTable: spec.tokenTable || noTokens
   }
 }
 
@@ -67,6 +72,8 @@ export class StreamLanguage<State> extends Language {
   streamParser: Required<StreamParser<State>>
   /// @internal
   stateAfter: NodeProp<State>
+  /// @internal
+  tokenTable: TokenTable
 
   private constructor(parser: StreamParser<State>) {
     let data = defineLanguageFacet(parser.languageData)
@@ -80,6 +87,7 @@ export class StreamLanguage<State> extends Language {
     self = this
     this.streamParser = p
     this.stateAfter = new NodeProp<State>({perNode: true})
+    this.tokenTable = parser.tokenTable ? new TokenTable(p.tokenTable) : defaultTokenTable
   }
 
   static define<State>(spec: StreamParser<State>) { return new StreamLanguage(spec) }
@@ -266,7 +274,8 @@ class Parse<State> implements PartialParse {
       while (!stream.eol()) {
         let token = readToken(streamParser.token, stream, this.state)
         if (token)
-          offset = this.emitToken(tokenID(token), this.parsedPos + stream.start, this.parsedPos + stream.pos, 4, offset)
+          offset = this.emitToken(this.lang.tokenTable.resolve(token), this.parsedPos + stream.start,
+                                  this.parsedPos + stream.pos, 4, offset)
         if (stream.start > C.MaxLineLength) break
       }
     }
@@ -308,15 +317,13 @@ function readToken<State>(token: (stream: StringStream, state: State) => string 
   throw new Error("Stream parser failed to advance stream.")
 }
 
-const tokenTable: {[name: string]: number} = Object.create(null)
+const noTokens: {[name: string]: Tag} = Object.create(null)
+
 const typeArray: NodeType[] = [NodeType.none]
 const nodeSet = new NodeSet(typeArray)
 const warned: string[] = []
 
-function tokenID(tag: string): number {
-  return !tag ? 0 : tokenTable[tag] || (tokenTable[tag] = createTokenType(tag))
-}
-
+const defaultTable: {[name: string]: number} = Object.create(null)
 for (let [legacyName, name] of [
   ["variable", "variableName"],
   ["variable-2", "variableName.special"],
@@ -330,7 +337,19 @@ for (let [legacyName, name] of [
   ["error", "invalid"],
   ["header", "heading"],
   ["property", "propertyName"]
-]) tokenTable[legacyName] = tokenID(name)
+]) defaultTable[legacyName] = createTokenType(noTokens, name)
+
+class TokenTable {
+  table: {[name: string]: number} = Object.assign(Object.create(null), defaultTable)
+
+  constructor(readonly extra: {[name: string]: Tag}) {}
+
+  resolve(tag: string) {
+    return !tag ? 0 : this.table[tag] || (this.table[tag] = createTokenType(this.extra, tag))
+  }
+}
+
+const defaultTokenTable = new TokenTable(noTokens)
 
 function warnForPart(part: string, msg: string) {
   if (warned.indexOf(part) > -1) return
@@ -338,10 +357,10 @@ function warnForPart(part: string, msg: string) {
   console.warn(msg)
 }
 
-function createTokenType(tagStr: string) {
+function createTokenType(extra: {[name: string]: Tag}, tagStr: string) {
   let tag = null
   for (let part of tagStr.split(".")) {
-    let value = (tags as any)[part]
+    let value = (extra[part] || (tags as any)[part]) as Tag | ((t: Tag) => Tag) | undefined
     if (!value) {
       warnForPart(part, `Unknown highlighting tag ${part}`)
     } else if (typeof value == "function") {

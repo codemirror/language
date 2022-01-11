@@ -1,6 +1,7 @@
 import ist from "ist"
 import {StreamLanguage} from "@codemirror/stream-parser"
 import {EditorState} from "@codemirror/state"
+import {Tag} from "@codemirror/highlight"
 import {syntaxTree, ensureSyntaxTree, getIndentation, Language} from "@codemirror/language"
 import {SyntaxNode} from "@lezer/common"
 
@@ -110,5 +111,18 @@ describe("StreamLanguage", () => {
     isNode(tree.resolve(20, 1), "number", 20, 22)
     isNode(tree.resolve(26, 1), "number", 26, 28)
     isNode(tree.resolve(32, 1), "number", 32, 37)
+  })
+
+  it("accepts custom token types", () => {
+    let tag = Tag.define()
+    let lang = StreamLanguage.define<null>({
+      token(stream) {
+        if (stream.match(/^\w+/)) return "foo"
+        stream.next()
+        return null
+      },
+      tokenTable: {foo: tag}
+    })
+    ist(lang.parser.parse("hello").toString(), "Document(foo)")
   })
 })
