@@ -199,6 +199,8 @@ const foldWidget = Decoration.replace({widget: new class extends WidgetType {
   }
 }})
 
+type Handlers = {[event: string]: (view: EditorView, line: BlockInfo, event: Event) => boolean}
+
 interface FoldGutterConfig {
   /// A function that creates the DOM element used to indicate a
   /// given line is folded or can be folded. 
@@ -210,12 +212,15 @@ interface FoldGutterConfig {
   /// Text used to indicate that a given line is folded. 
   /// Defaults to `"›"`.
   closedText?: string,
+  /// Supply event handlers for DOM events on this gutter.
+  domEventHandlers?: Handlers,
 }
 
 const foldGutterDefaults: Required<FoldGutterConfig> = {
   openText: "⌄",
   closedText: "›",
   markerDOM: null,
+  domEventHandlers: {},
 }
 
 class FoldMarker extends GutterMarker {
@@ -268,6 +273,8 @@ export function foldGutter(config: FoldGutterConfig = {}): Extension {
     }
   })
 
+  let { domEventHandlers } = fullConfig;
+
   return [
     markers,
     gutter({
@@ -277,7 +284,10 @@ export function foldGutter(config: FoldGutterConfig = {}): Extension {
         return new FoldMarker(fullConfig, false)
       },
       domEventHandlers: {
-        click: (view, line) => {
+        ...domEventHandlers,
+        click: (view, line, event) => {
+          if (domEventHandlers.click) domEventHandlers.click(view, line, event)
+
           let folded = foldInside(view.state, line.from, line.to)
           if (folded) {
             view.dispatch({effects: unfoldEffect.of(folded)})
