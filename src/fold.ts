@@ -286,7 +286,7 @@ export function foldGutter(config: FoldGutterConfig = {}): Extension {
       domEventHandlers: {
         ...domEventHandlers,
         click: (view, line, event) => {
-          if (domEventHandlers.click) domEventHandlers.click(view, line, event)
+          if (domEventHandlers.click && domEventHandlers.click(view, line, event)) return true
 
           let folded = foldInside(view.state, line.from, line.to)
           if (folded) {
