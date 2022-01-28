@@ -136,7 +136,7 @@ function cutTree(lang: StreamLanguage<unknown>, tree: Tree, from: number, to: nu
   if (inside && from <= 0 && to >= tree.length) return tree
   if (!inside && tree.type == lang.topNode) inside = true
   for (let i = tree.children.length - 1; i >= 0; i--) {
-    let pos = tree.positions[i] + from, child = tree.children[i], inner
+    let pos = tree.positions[i], child = tree.children[i], inner
     if (pos < to && child instanceof Tree) {
       if (!(inner = cutTree(lang, child, from - pos, to - pos, inside))) break
       return !inside ? inner
@@ -185,9 +185,9 @@ class Parse<State> implements PartialParse {
     let {state, tree} = findStartInFragments(lang, fragments, from, context?.state)
     this.state = state
     this.parsedPos = this.chunkStart = from + tree.length
-    if (tree.length) {
-      this.chunks.push(tree)
-      this.chunkPos.push(0)
+    for (let i = 0; i < tree.children.length; i++) {
+      this.chunks.push(tree.children[i] as Tree)
+      this.chunkPos.push(tree.positions[i])
     }
     if (context && this.parsedPos < context.viewport.from - C.MaxDistanceBeforeViewport) {
       this.state = this.lang.streamParser.startState(getIndentUnit(context.state))
