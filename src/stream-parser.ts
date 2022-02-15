@@ -198,7 +198,7 @@ class Parse<State> implements PartialParse {
 
   advance() {
     let context = ParseContext.get()
-    let parseEnd = this.stoppedAt == null ? this.to : this.stoppedAt
+    let parseEnd = this.stoppedAt == null ? this.to : Math.min(this.to, this.stoppedAt)
     let end = Math.min(parseEnd, this.chunkStart + C.ChunkSize)
     if (context) end = Math.min(end, context.viewport.to)
     while (this.parsedPos < end) this.parseLine(context)
