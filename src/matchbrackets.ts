@@ -2,23 +2,29 @@ import {combineConfig, EditorState, Facet, StateField, Extension} from "@codemir
 import {syntaxTree} from "@codemirror/language"
 import {EditorView} from "@codemirror/view"
 import {Decoration, DecorationSet} from "@codemirror/view"
+import {Range} from "@codemirror/rangeset"
 import {Tree, SyntaxNode, NodeType, NodeProp} from "@lezer/common"
 
 export interface Config {
   /// Whether the bracket matching should look at the character after
   /// the cursor when matching (if the one before isn't a bracket).
   /// Defaults to true.
-  afterCursor?: boolean,
+  afterCursor?: boolean
   /// The bracket characters to match, as a string of pairs. Defaults
   /// to `"()[]{}"`. Note that these are only used as fallback when
   /// there is no [matching
   /// information](https://lezer.codemirror.net/docs/ref/#common.NodeProp^closedBy)
   /// in the syntax tree.
-  brackets?: string,
+  brackets?: string
   /// The maximum distance to scan for matching brackets. This is only
   /// relevant for brackets not encoded in the syntax tree. Defaults
   /// to 10 000.
   maxScanDistance?: number
+  /// Can be used to configure the way in which brackets are
+  /// decorated. The default behavior is to add the
+  /// `cm-matchingBracket` class for matching pairs, and
+  /// `cm-nonmatchingBracket` for mismatched pairs or single brackets.
+  renderMatch?: (match: MatchResult, state: EditorState) => readonly Range<Decoration>[]
 }
 
 const baseTheme = EditorView.baseTheme({
@@ -33,7 +39,8 @@ const bracketMatchingConfig = Facet.define<Config, Required<Config>>({
     return combineConfig(configs, {
       afterCursor: true,
       brackets: DefaultBrackets,
-      maxScanDistance: DefaultScanDist
+      maxScanDistance: DefaultScanDist,
+      renderMatch: defaultRenderMatch
     })
   }
 })
@@ -41,11 +48,19 @@ const bracketMatchingConfig = Facet.define<Config, Required<Config>>({
 const matchingMark = Decoration.mark({class: "cm-matchingBracket"}),
       nonmatchingMark = Decoration.mark({class: "cm-nonmatchingBracket"})
 
+function defaultRenderMatch(match: MatchResult) {
+  let decorations = []
+  let mark = match.matched ? matchingMark : nonmatchingMark
+  decorations.push(mark.range(match.start.from, match.start.to))
+  if (match.end) decorations.push(mark.range(match.end.from, match.end.to))
+  return decorations
+}
+
 const bracketMatchingState = StateField.define<DecorationSet>({
   create() { return Decoration.none },
   update(deco, tr) {
     if (!tr.docChanged && !tr.selection) return deco
-    let decorations = []
+    let decorations: Range<Decoration>[] = []
     let config = tr.state.facet(bracketMatchingConfig)
     for (let range of tr.state.selection.ranges) {
       if (!range.empty) continue
@@ -54,10 +69,8 @@ const bracketMatchingState = StateField.define<DecorationSet>({
         || (config.afterCursor &&
             (matchBrackets(tr.state, range.head, 1, config) ||
              (range.head < tr.state.doc.length && matchBrackets(tr.state, range.head + 1, -1, config))))
-      if (!match) continue
-      let mark = match.matched ? matchingMark : nonmatchingMark
-      decorations.push(mark.range(match.start.from, match.start.to))
-      if (match.end) decorations.push(mark.range(match.end.from, match.end.to))
+      if (match)
+        decorations = decorations.concat(config.renderMatch(match, tr.state))
     }
     return Decoration.set(decorations, true)
   },
