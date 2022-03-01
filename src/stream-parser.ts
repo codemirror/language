@@ -112,7 +112,7 @@ export class StreamLanguage<State> extends Language {
       if (end == pos) break
       statePos = line.to + 1
     }
-    let {text} = cx.state.doc.lineAt(pos)
+    let {text} = cx.lineAt(pos)
     return this.streamParser.indent(state, /^\s*(.*)/.exec(text)![1], cx)
   }
 
