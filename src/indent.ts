@@ -101,9 +101,11 @@ export class IndentContext {
   /// after the break is used.
   lineAt(pos: number, bias: -1 | 1 = 1): {text: string, from: number} {
     let line = this.state.doc.lineAt(pos)
-    let {simulateBreak} = this.options
+    let {simulateBreak, simulateDoubleBreak} = this.options
     if (simulateBreak != null && simulateBreak >= line.from && simulateBreak <= line.to) {
-      if (bias < 0 ? simulateBreak < pos : simulateBreak <= pos)
+      if (simulateDoubleBreak && simulateBreak == pos)
+        return {text: "", from: pos}
+      else if (bias < 0 ? simulateBreak < pos : simulateBreak <= pos)
         return {text: line.text.slice(simulateBreak - line.from), from: simulateBreak}
       else
         return {text: line.text.slice(0, simulateBreak - line.from), from: line.from}
