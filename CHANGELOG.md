@@ -1,3 +1,9 @@
+## 0.19.8 (2022-03-03)
+
+### Bug fixes
+
+Fix an issue that could cause indentation logic to use the wrong line content when indenting multiple lines at once.
+
 ## 0.19.7 (2021-12-02)
 
 ### Bug fixes
