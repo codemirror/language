@@ -1,7 +1,7 @@
 import {combineConfig, EditorState, StateEffect, ChangeDesc, Facet, StateField, Extension} from "@codemirror/state"
 import {EditorView, BlockInfo, Command, Decoration, DecorationSet, WidgetType,
         KeyBinding, ViewPlugin, ViewUpdate} from "@codemirror/view"
-import {foldable, language} from "@codemirror/language"
+import {foldable, language, syntaxTree} from "@codemirror/language"
 import {gutter, GutterMarker} from "@codemirror/gutter"
 import {RangeSet, RangeSetBuilder} from "@codemirror/rangeset"
 
@@ -258,7 +258,8 @@ export function foldGutter(config: FoldGutterConfig = {}): Extension {
     update(update: ViewUpdate) {
       if (update.docChanged || update.viewportChanged ||
           update.startState.facet(language) != update.state.facet(language) ||
-          update.startState.field(foldState, false) != update.state.field(foldState, false))
+          update.startState.field(foldState, false) != update.state.field(foldState, false) ||
+          syntaxTree(update.startState) != syntaxTree(update.state))
         this.markers = this.buildMarkers(update.view)
     }
 
