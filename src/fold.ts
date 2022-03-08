@@ -31,12 +31,17 @@ function syntaxFolding(state: EditorState, start: number, end: number) {
     if (cur.to <= end || cur.from > end) continue
     if (found && cur.from < start) break
     let prop = cur.type.prop(foldNodeProp)
-    if (prop) {
+    if (prop && (cur.to < tree.length - 50 || tree.length == state.doc.length || !isUnfinished(cur))) {
       let value = prop(cur, state)
       if (value && value.from <= end && value.from >= start && value.to > end) found = value
     }
   }
   return found
+}
+
+function isUnfinished(node: SyntaxNode) {
+  let ch = node.lastChild
+  return ch && ch.to == node.to && ch.type.isError
 }
 
 /// Check whether the given line is foldable. First asks any fold
