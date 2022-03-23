@@ -130,7 +130,7 @@ export function matchBrackets(state: EditorState, pos: number, dir: -1 | 1, conf
 function matchMarkedBrackets(_state: EditorState, _pos: number, dir: -1 | 1, token: SyntaxNode,
                              matching: readonly string[], brackets: string) {
   let parent = token.parent, firstToken = {from: token.from, to: token.to}
-  let depth = 0, cursor = parent?.cursor
+  let depth = 0, cursor = parent?.cursor()
   if (cursor && (dir < 0 ? cursor.childBefore(token.from) : cursor.childAfter(token.to))) do {
     if (dir < 0 ? cursor.to <= token.from : cursor.from >= token.to) {
       if (depth == 0 && matching.indexOf(cursor.type.name) > -1 && cursor.from < cursor.to) {
