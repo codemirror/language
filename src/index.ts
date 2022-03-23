@@ -5,3 +5,5 @@ export {IndentContext, getIndentUnit, indentString, indentOnInput, indentService
         TreeIndentContext, indentNodeProp, delimitedIndent, continuedIndent, flatIndent} from "./indent"
 
 export {foldService, foldNodeProp, foldInside, foldable} from "./fold"
+
+export {HighlightStyle, syntaxHighlighting, highlightingFor, TagStyle, defaultHighlightStyle} from "./highlight"
