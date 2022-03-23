@@ -1,5 +1,5 @@
 import {Tree, SyntaxNode, ChangedRange, TreeFragment, NodeProp, NodeType, Input,
-        PartialParse, Parser} from "@lezer/common"
+        PartialParse, Parser, IterMode} from "@lezer/common"
 import type {LRParser, ParserConfig} from "@lezer/lr"
 import {Text, TextIterator} from "@codemirror/text"
 import {EditorState, StateField, Transaction, Extension, StateEffect, Facet, ChangeDesc} from "@codemirror/state"
@@ -117,7 +117,7 @@ function languageDataFacetAt(state: EditorState, pos: number, side: -1 | 0 | 1) 
   if (!topLang) return null
   let facet = topLang.data
   if (topLang.allowsNesting) {
-    for (let node: SyntaxNode | null = syntaxTree(state).topNode; node; node = node.enter(pos, side, true, false))
+    for (let node: SyntaxNode | null = syntaxTree(state).topNode; node; node = node.enter(pos, side, IterMode.ExcludeBuffers))
       facet = node.type.prop(languageDataProp) || facet
   }
   return facet
