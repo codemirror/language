@@ -154,7 +154,7 @@ export class LRLanguage extends Language {
     return new LRLanguage(this.data, this.parser.configure(options))
   }
 
-  get allowsNesting() { return (this.parser as any).wrappers.length > 0 } // FIXME
+  get allowsNesting() { return this.parser.hasWrappers() }
 }
 
 /// Get the syntax tree for a state, which is the current (possibly
