@@ -7,10 +7,10 @@ import {syntaxTree} from "@codemirror/language"
 import {RangeSetBuilder} from "@codemirror/rangeset"
 
 /// A highlight style associates CSS styles with higlighting
-/// [tags](#highlight.Tag).
+/// [tags](https://lezer.codemirror.net/docs/ref#highlight.Tag).
 export class HighlightStyle {
   /// A style module holding the CSS rules for this highlight style.
-  /// When using [`highlightTree`](#highlight.highlightTree), you may
+  /// When using [`highlightTree`](https://lezer.codemirror.net/docs/ref#highlight.highlightTree), you may
   /// want to manually mount this module to show the highlighting.
   readonly module: StyleModule | null
 
@@ -47,7 +47,7 @@ export class HighlightStyle {
   /// the given tags. The spec must be objects that hold a style tag
   /// or array of tags in their `tag` property, and either a single
   /// `class` property providing a static CSS class (for highlighters
-  /// like [`classHighlightStyle`](#highlight.classHighlightStyle)
+  /// like [`classHighlightStyle`](https://lezer.codemirror.net/docs/ref#highlight.classHighlightStyle)
   /// that rely on external styling), or a
   /// [`style-mod`](https://github.com/marijnh/style-mod#documentation)-style
   /// set of CSS properties (which define the styling for those tags).
@@ -105,17 +105,17 @@ export function syntaxHighlighting(highlighter: Highlighter | HighlightStyle, op
 
 /// Returns the CSS classes (if any) that the highlighters active in
 /// the given state would assign to the given a style
-/// [tags](#highlight.Tag) and (optional) language
-/// [scope](#highlight.HighlightStyle^define^options.scope).
+/// [tags](https://lezer.codemirror.net/docs/ref#highlight.Tag) and (optional) language
+/// [scope](#language.HighlightStyle^define^options.scope).
 export function highlightingFor(state: EditorState, tags: readonly Tag[], scope?: NodeType) {
   let style = getHighlighter(state)
   return style && style(tags, scope || NodeType.none)
 }
 
 /// The type of object used in
-/// [`HighlightStyle.define`](#highlight.HighlightStyle^define).
+/// [`HighlightStyle.define`](#language.HighlightStyle^define).
 /// Assigns a style to one or more highlighting
-/// [tags](#highlight.Tag), which can either be a fixed class name
+/// [tags](https://lezer.codemirror.net/docs/ref#highlight.Tag), which can either be a fixed class name
 /// (which must be defined elsewhere), or a set of CSS properties, for
 /// which the library will define an anonymous class.
 export interface TagStyle {
