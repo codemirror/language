@@ -10,8 +10,10 @@ import {RangeSetBuilder} from "@codemirror/rangeset"
 /// [tags](https://lezer.codemirror.net/docs/ref#highlight.Tag).
 export class HighlightStyle {
   /// A style module holding the CSS rules for this highlight style.
-  /// When using [`highlightTree`](https://lezer.codemirror.net/docs/ref#highlight.highlightTree), you may
-  /// want to manually mount this module to show the highlighting.
+  /// When using
+  /// [`highlightTree`](https://lezer.codemirror.net/docs/ref#highlight.highlightTree)
+  /// outside of the editor, you may want to manually mount this
+  /// module to show the highlighting.
   readonly module: StyleModule | null
 
   /// Returns the CSS classes associated with the given tags, if any.
@@ -46,8 +48,7 @@ export class HighlightStyle {
   /// Create a highlighter style that associates the given styles to
   /// the given tags. The spec must be objects that hold a style tag
   /// or array of tags in their `tag` property, and either a single
-  /// `class` property providing a static CSS class (for highlighters
-  /// like [`classHighlightStyle`](https://lezer.codemirror.net/docs/ref#highlight.classHighlightStyle)
+  /// `class` property providing a static CSS class (for highlighter
   /// that rely on external styling), or a
   /// [`style-mod`](https://github.com/marijnh/style-mod#documentation)-style
   /// set of CSS properties (which define the styling for those tags).
@@ -86,7 +87,18 @@ function getHighlighter(state: EditorState): Highlighter | null {
   return state.facet(highlighterFacet) || state.facet(fallbackHighlighter)
 }
 
-export function syntaxHighlighting(highlighter: Highlighter | HighlightStyle, options?: {fallback: boolean}): Extension {
+/// Wrap a highlighter function or
+/// [`HighlightStyle`](#language.HighlightStyle) instance in an editor
+/// extension that uses it to apply syntax highlighting to the editor
+/// content.
+///
+/// When multiple (non-fallback) styles are provided, the styling
+/// applied is the union of the classes they emit.
+export function syntaxHighlighting(highlighter: Highlighter | HighlightStyle, options?: {
+  /// When enabled, this marks the highlighter as a fallback which
+  /// only takes effect if no other highlighters are registered.
+  fallback: boolean
+}): Extension {
   let ext: Extension[] = [treeHighlighter]
   let [mod, hl, themeType] = highlighter instanceof HighlightStyle
     ? [highlighter.module, highlighter.highlighter, highlighter.themeType]
@@ -126,7 +138,7 @@ export interface TagStyle {
   /// Any further properties (if `class` isn't given) will be
   /// interpreted as in style objects given to
   /// [style-mod](https://github.com/marijnh/style-mod#documentation).
-  /// The type here is `any` because of TypeScript limitations.
+  /// (The type here is `any` because of TypeScript limitations.)
   [styleProperty: string]: any
 }
 
@@ -164,8 +176,6 @@ class TreeHighlighter {
   }
 }
 
-// This extension installs a highlighter that highlights based on the
-// syntax tree and highlight style.
 const treeHighlighter = Prec.high(ViewPlugin.fromClass(TreeHighlighter, {
   decorations: v => v.decorations
 }))

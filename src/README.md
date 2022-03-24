@@ -22,6 +22,18 @@
 
 @LanguageDescription
 
+### Highlighting
+
+@syntaxHighlighting
+
+@HighlightStyle
+
+@TagStyle
+
+@defaultHighlightStyle
+
+@highlightingFor
+
 ### Folding
 
 @foldService
