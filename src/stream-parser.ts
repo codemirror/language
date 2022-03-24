@@ -14,10 +14,12 @@ export {StringStream}
 export interface StreamParser<State> {
   /// Read one token, advancing the stream past it, and returning a
   /// string indicating the token's style tag—either the name of one
-  /// of the tags in [`tags`](#highlight.tags), or such a name
-  /// suffixed by one or more tag
-  /// [modifier](#highlight.Tag^defineModifier) names, separated by
-  /// spaces. For example `"keyword"` or "`variableName.constant"`.
+  /// of the tags in
+  /// [`tags`](https://lezer.codemirror.net/docs/ref#highlight.tags),
+  /// or such a name suffixed by one or more tag
+  /// [modifier](https://lezer.codemirror.net/docs/ref#highlight.Tag^defineModifier)
+  /// names, separated by spaces. For example `"keyword"` or
+  /// "`variableName.constant"`.
   ///
   /// It is okay to return a zero-length token, but only if that
   /// updates the state so that the next call will return a non-empty
