@@ -279,6 +279,7 @@ class Parse<State> implements PartialParse {
         if (stream.start > C.MaxLineLength) break
       }
     }
+    this.skipGapsTo(this.parsedPos + line.length, offset, -1)
     this.parsedPos = end
     if (this.parsedPos < this.to) this.parsedPos++
   }
