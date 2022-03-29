@@ -291,14 +291,17 @@ export class ParseContext {
   }
 
   /// @internal
-  work(time: number, upto?: number) {
+  work(until: number | (() => boolean), upto?: number) {
     if (upto != null && upto >= this.state.doc.length) upto = undefined
     if (this.tree != Tree.empty && this.isDone(upto ?? this.state.doc.length)) {
       this.takeTree()
       return true
     }
     return this.withContext(() => {
-      let endTime = Date.now() + time
+      if (typeof until == "number") {
+        let endTime = Date.now() + until
+        until = () => Date.now() > endTime
+      }
       if (!this.parse) this.parse = this.startParse()
       if (upto != null && (this.parse.stoppedAt == null || this.parse.stoppedAt > upto) &&
           upto < this.state.doc.length) this.parse.stopAt(upto)
@@ -314,7 +317,7 @@ export class ParseContext {
           else
             return true
         }
-        if (Date.now() > endTime) return false
+        if (until()) return false
       }
     })
   }
@@ -504,6 +507,9 @@ if (typeof requestIdleCallback != "undefined") requestIdle = (callback: (deadlin
   return () => idle < 0 ? clearTimeout(timeout) : cancelIdleCallback(idle)
 }
 
+const isInputPending = typeof navigator != "undefined" && (navigator as any).scheduling?.isInputPending
+  ? () => (navigator as any).scheduling.isInputPending() : null
+
 const parseWorker = ViewPlugin.fromClass(class ParseWorker {
   working: (() => void) | null = null
   workScheduled = 0
@@ -547,9 +553,12 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
 
     let {state, viewport: {to: vpTo}} = this.view, field = state.field(Language.state)
     if (field.tree == field.context.tree && field.context.isDone(vpTo + Work.MaxParseAhead)) return
-    let time = Math.min(this.chunkBudget, Work.Slice, deadline ? Math.max(Work.MinSlice, deadline.timeRemaining() - 5) : 1e9)
+    let endTime = Date.now() + Math.min(
+      this.chunkBudget, Work.Slice, deadline && !isInputPending ? Math.max(Work.MinSlice, deadline.timeRemaining() - 5) : 1e9)
     let viewportFirst = field.context.treeLen < vpTo && state.doc.length > vpTo + 1000
-    let done = field.context.work(time, vpTo + (viewportFirst ? 0 : Work.MaxParseAhead))
+    let done = field.context.work(() => {
+      return isInputPending && isInputPending() || Date.now() > endTime
+    } , vpTo + (viewportFirst ? 0 : Work.MaxParseAhead))
     this.chunkBudget -= Date.now() - now
     if (done || this.chunkBudget <= 0) {
       field.context.takeTree()
