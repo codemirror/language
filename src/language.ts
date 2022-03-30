@@ -466,7 +466,7 @@ class LanguageState {
   }
 
   apply(tr: Transaction) {
-    if (!tr.docChanged) return this
+    if (!tr.docChanged && this.tree == this.context.tree) return this
     let newCx = this.context.changes(tr.changes, tr.state)
     // If the previous parse wasn't done, go forward only up to its
     // end position or the end of the viewport, to avoid slowing down
