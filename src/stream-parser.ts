@@ -196,6 +196,7 @@ class Parse<State> implements PartialParse {
       context.skipUntilInView(this.parsedPos, context.viewport.from)
       this.parsedPos = context.viewport.from
     }
+    this.moveRangeIndex()
   }
 
   advance() {
@@ -254,6 +255,10 @@ class Parse<State> implements PartialParse {
     return offset
   }
 
+  moveRangeIndex() {
+    while (this.ranges[this.rangeIndex].to < this.parsedPos) this.rangeIndex++
+  }
+
   emitToken(id: number, from: number, to: number, size: number, offset: number) {
     if (this.ranges.length > 1) {
       offset = this.skipGapsTo(from, offset, 1)
@@ -281,8 +286,8 @@ class Parse<State> implements PartialParse {
         if (stream.start > C.MaxLineLength) break
       }
     }
-    this.skipGapsTo(this.parsedPos + line.length, offset, -1)
     this.parsedPos = end
+    this.moveRangeIndex()
     if (this.parsedPos < this.to) this.parsedPos++
   }
 
