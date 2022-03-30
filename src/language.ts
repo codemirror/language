@@ -584,7 +584,7 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
   }
 
   isWorking() {
-    return this.working || this.workScheduled > 0
+    return !!(this.working || this.workScheduled > 0)
   }
 }, {
   eventHandlers: {focus() { this.scheduleWork() }}
