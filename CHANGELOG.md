@@ -1,3 +1,11 @@
+## 0.19.9 (2022-03-30)
+
+### Bug fixes
+
+Make sure nodes that end at the end of a partial parse aren't treated as valid fold targets.
+
+Fix an issue where the parser sometimes wouldn't reuse parsing work done in the background on transactions.
+
 ## 0.19.8 (2022-03-03)
 
 ### Bug fixes
