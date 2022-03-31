@@ -1,3 +1,9 @@
+## 0.19.10 (2022-03-31)
+
+### Bug fixes
+
+Autocompletion may now also trigger automatic indentation on input.
+
 ## 0.19.9 (2022-03-30)
 
 ### Bug fixes
