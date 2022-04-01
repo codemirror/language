@@ -177,7 +177,7 @@ export function ensureSyntaxTree(state: EditorState, upto: number, timeout = 50)
 /// given document position. If there isn't, the background parse
 /// process _might_ still be working and update the tree further, but
 /// there is no guarantee of that—the parser will [stop
-/// working](#language.syntaxParserStopped) when it has spent a
+/// working](#language.syntaxParserRunning) when it has spent a
 /// certain amount of time or has moved beyond the visible viewport.
 /// Always returns false if no language has been enabled.
 export function syntaxTreeAvailable(state: EditorState, upto = state.doc.length) {
