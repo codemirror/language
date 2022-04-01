@@ -3,7 +3,7 @@ import {Tag, tags, tagHighlighter, combinedHighlighter, Highlighter, highlightTr
 import {StyleSpec, StyleModule} from "style-mod"
 import {EditorView, ViewPlugin, ViewUpdate, Decoration, DecorationSet} from "@codemirror/view"
 import {EditorState, Prec, Facet, Extension} from "@codemirror/state"
-import {syntaxTree} from "@codemirror/language"
+import {syntaxTree} from "./language"
 import {RangeSetBuilder} from "@codemirror/rangeset"
 
 /// A highlight style associates CSS styles with higlighting
