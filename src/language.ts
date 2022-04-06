@@ -23,11 +23,11 @@ export function defineLanguageFacet(baseData?: {[name: string]: any}) {
 
 /// A language object manages parsing and per-language
 /// [metadata](#state.EditorState.languageDataAt). Parse data is
-/// managed as a [Lezer](https://lezer.codemirror.net) tree. You'll
-/// want to subclass this class for custom parsers, or use the
-/// [`LRLanguage`](#language.LRLanguage) or
-/// [`StreamLanguage`](#stream-parser.StreamLanguage) abstractions for
-/// [Lezer](https://lezer.codemirror.net/) or stream parsers.
+/// managed as a [Lezer](https://lezer.codemirror.net) tree. The class
+/// can be used directly, via the [`LRLanguage`](#language.LRLanguage)
+/// subclass for [Lezer](https://lezer.codemirror.net/) LR parsers, or
+/// via the [`StreamLanguage`](#stream-parser.StreamLanguage) subclass
+/// for stream parsers.
 export class Language {
   /// The extension value to install this provider.
   readonly extension: Extension
@@ -36,17 +36,16 @@ export class Language {
   /// parser](https://lezer.codemirror.net/docs/ref#common.Parser).
   parser: Parser
 
-  /// Construct a language object. You usually don't need to invoke
-  /// this directly. But when you do, make sure you use
-  /// [`defineLanguageFacet`](#language.defineLanguageFacet) to create
-  /// the first argument.
+  /// Construct a language object. If you need to invoke this
+  /// directly, first define a data facet with
+  /// [`defineLanguageFacet`](#language.defineLanguageFacet), and then
+  /// configure your parser to attach it to the language's outer
+  /// syntax node.
   constructor(
     /// The [language data](#state.EditorState.languageDataAt) data
     /// facet used for this language.
     readonly data: Facet<{[name: string]: any}>,
     parser: Parser,
-    /// The node type of the top node of trees produced by this parser.
-    readonly topNode: NodeType,
     extraExtensions: Extension[] = []
   ) {
     // Kludge to define EditorState.tree as a debugging helper,
@@ -129,7 +128,7 @@ function languageDataFacetAt(state: EditorState, pos: number, side: -1 | 0 | 1) 
 export class LRLanguage extends Language {
   private constructor(data: Facet<{[name: string]: any}>,
                       readonly parser: LRParser) {
-    super(data, parser, parser.topNode)
+    super(data, parser)
   }
 
   /// Define a language from a parser.

@@ -1,14 +1,14 @@
 import {Tree, NodeType} from "@lezer/common"
-import {Tag, tags, tagHighlighter, combinedHighlighter, Highlighter, highlightTree} from "@lezer/highlight"
+import {Tag, tags, tagHighlighter, Highlighter, highlightTree} from "@lezer/highlight"
 import {StyleSpec, StyleModule} from "style-mod"
 import {EditorView, ViewPlugin, ViewUpdate, Decoration, DecorationSet} from "@codemirror/view"
 import {EditorState, Prec, Facet, Extension} from "@codemirror/state"
-import {syntaxTree} from "./language"
+import {syntaxTree, Language, languageDataProp} from "./language"
 import {RangeSetBuilder} from "@codemirror/rangeset"
 
 /// A highlight style associates CSS styles with higlighting
 /// [tags](https://lezer.codemirror.net/docs/ref#highlight.Tag).
-export class HighlightStyle {
+export class HighlightStyle implements Highlighter {
   /// A style module holding the CSS rules for this highlight style.
   /// When using
   /// [`highlightTree`](https://lezer.codemirror.net/docs/ref#highlight.highlightTree)
@@ -16,16 +16,14 @@ export class HighlightStyle {
   /// module to show the highlighting.
   readonly module: StyleModule | null
 
-  /// Returns the CSS classes associated with the given tags, if any.
-  /// This is a stand-alone function value, and can be passed to
-  /// `highlighTree` without binding it.
-  readonly highlighter: Highlighter
-
   /// @internal
   readonly themeType: "dark" | "light" | undefined
 
+  readonly style: (tags: readonly Tag[]) => string | null
+  readonly scope: ((type: NodeType) => boolean) | undefined
+
   private constructor(spec: readonly TagStyle[],
-                      options: {scope?: NodeType, all?: string | StyleSpec, themeType?: "dark" | "light"}) {
+                      options: {scope?: NodeType | Language, all?: string | StyleSpec, themeType?: "dark" | "light"}) {
     let modSpec: {[name: string]: StyleSpec} | undefined
     function def(spec: StyleSpec) {
       let cls = StyleModule.newName()
@@ -33,13 +31,16 @@ export class HighlightStyle {
       return cls
     }
 
-    this.highlighter = tagHighlighter(spec.map(style => ({
+    const scopeOpt = options.scope
+    this.scope = scopeOpt instanceof Language ? (type: NodeType) => type.prop(languageDataProp) == scopeOpt.data
+      : scopeOpt ? (type: NodeType) => type == scopeOpt : undefined
+
+    this.style = tagHighlighter(spec.map(style => ({
       tag: style.tag,
       class: style.class as string || def(Object.assign({}, style, {tag: null}))
     })), {
-      scope: options.scope,
       all: typeof options.all == "string" ? options.all : options.all ? def(options.all) : undefined,
-    })
+    }).style
 
     this.module = modSpec ? new StyleModule(modSpec) : null
     this.themeType = options.themeType
@@ -75,16 +76,15 @@ export class HighlightStyle {
   }
 }
 
-const highlighterFacet = Facet.define<Highlighter, Highlighter | null>({
-  combine(highlighters) { return highlighters.length ? combinedHighlighter(highlighters) : null }
+const highlighterFacet = Facet.define<Highlighter>()
+
+const fallbackHighlighter = Facet.define<Highlighter, readonly Highlighter[] | null>({
+  combine(values) { return values.length ? [values[0]] : null }
 })
 
-const fallbackHighlighter = Facet.define<Highlighter, Highlighter | null>({
-  combine(values) { return values.length ? values[0] : null }
-})
-
-function getHighlighter(state: EditorState): Highlighter | null {
-  return state.facet(highlighterFacet) || state.facet(fallbackHighlighter)
+function getHighlighters(state: EditorState): readonly Highlighter[] | null {
+  let main = state.facet(highlighterFacet)
+  return main.length ? main : state.facet(fallbackHighlighter)
 }
 
 /// Wrap a highlighter function or
@@ -94,24 +94,24 @@ function getHighlighter(state: EditorState): Highlighter | null {
 ///
 /// When multiple (non-fallback) styles are provided, the styling
 /// applied is the union of the classes they emit.
-export function syntaxHighlighting(highlighter: Highlighter | HighlightStyle, options?: {
+export function syntaxHighlighting(highlighter: Highlighter, options?: {
   /// When enabled, this marks the highlighter as a fallback which
   /// only takes effect if no other highlighters are registered.
   fallback: boolean
 }): Extension {
-  let ext: Extension[] = [treeHighlighter]
-  let [mod, hl, themeType] = highlighter instanceof HighlightStyle
-    ? [highlighter.module, highlighter.highlighter, highlighter.themeType]
-    : [null, highlighter, undefined]
-  if (mod) ext.push(EditorView.styleModule.of(mod))
+  let ext: Extension[] = [treeHighlighter], themeType: string | undefined
+  if (highlighter instanceof HighlightStyle) {
+    if (highlighter.module) ext.push(EditorView.styleModule.of(highlighter.module))
+    themeType = highlighter.themeType
+  }
   if (options?.fallback)
-    ext.push(fallbackHighlighter.of(hl))
+    ext.push(fallbackHighlighter.of(highlighter))
   else if (themeType)
     ext.push(highlighterFacet.computeN([EditorView.darkTheme], state => {
-      return state.facet(EditorView.darkTheme) == (themeType == "dark") ? [hl] : []
+      return state.facet(EditorView.darkTheme) == (themeType == "dark") ? [highlighter] : []
     }))
   else
-    ext.push(highlighterFacet.of(hl))
+    ext.push(highlighterFacet.of(highlighter))
   return ext
 }
 
@@ -119,9 +119,16 @@ export function syntaxHighlighting(highlighter: Highlighter | HighlightStyle, op
 /// the given state would assign to the given a style
 /// [tags](https://lezer.codemirror.net/docs/ref#highlight.Tag) and (optional) language
 /// [scope](#language.HighlightStyle^define^options.scope).
-export function highlightingFor(state: EditorState, tags: readonly Tag[], scope?: NodeType) {
-  let style = getHighlighter(state)
-  return style && style(tags, scope || NodeType.none)
+export function highlightingFor(state: EditorState, tags: readonly Tag[], scope?: NodeType): string | null {
+  let highlighters = getHighlighters(state)
+  let result = null
+  if (highlighters) for (let highlighter of highlighters) {
+    if (!highlighter.scope || scope && highlighter.scope(scope)) {
+      let cls = highlighter.style(tags)
+      if (cls) result = result ? result + " " + cls : cls
+    }
+  }
+  return result
 }
 
 /// The type of object used in
@@ -149,26 +156,26 @@ class TreeHighlighter {
 
   constructor(view: EditorView) {
     this.tree = syntaxTree(view.state)
-    this.decorations = this.buildDeco(view, getHighlighter(view.state))
+    this.decorations = this.buildDeco(view, getHighlighters(view.state))
   }
 
   update(update: ViewUpdate) {
-    let tree = syntaxTree(update.state), style = getHighlighter(update.state)
-    let styleChange = style != getHighlighter(update.startState)
+    let tree = syntaxTree(update.state), highlighters = getHighlighters(update.state)
+    let styleChange = highlighters != getHighlighters(update.startState)
     if (tree.length < update.view.viewport.to && !styleChange && tree.type == this.tree.type) {
       this.decorations = this.decorations.map(update.changes)
     } else if (tree != this.tree || update.viewportChanged || styleChange) {
       this.tree = tree
-      this.decorations = this.buildDeco(update.view, style)
+      this.decorations = this.buildDeco(update.view, highlighters)
     }
   }
 
-  buildDeco(view: EditorView, highlighter: Highlighter | null) {
-    if (!highlighter || !this.tree.length) return Decoration.none
+  buildDeco(view: EditorView, highlighters: readonly Highlighter[] | null) {
+    if (!highlighters || !this.tree.length) return Decoration.none
 
     let builder = new RangeSetBuilder<Decoration>()
     for (let {from, to} of view.visibleRanges) {
-      highlightTree(this.tree, highlighter, (from, to, style) => {
+      highlightTree(this.tree, highlighters, (from, to, style) => {
         builder.add(from, to, this.markCache[style] || (this.markCache[style] = Decoration.mark({class: style})))
       }, from, to)
     }

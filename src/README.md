@@ -1,8 +1,8 @@
+@languageDataProp
+
 @Language
 
 @defineLanguageFacet
-
-@languageDataProp
 
 @language
 
