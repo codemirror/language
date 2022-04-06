@@ -113,7 +113,13 @@ function announceFold(view: EditorView, range: {from: number, to: number}, fold 
     view.state.phrase("to")} ${lineTo}.`)
 }
 
-/// Fold all top-level foldable ranges.
+/// Fold all top-level foldable ranges. Note that, in most cases,
+/// folding information will depend on the [syntax
+/// tree](#language.syntaxTree), and folding everything may not work
+/// reliably when the document hasn't been fully parsed (either
+/// because the editor state was only just initialized, or because the
+/// document is so big that the parser decided not to parse it
+/// entirely).
 export const foldAll: Command = view => {
   let {state} = view, effects = []
   for (let pos = 0; pos < state.doc.length;) {
