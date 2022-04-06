@@ -47,7 +47,7 @@ export class HighlightStyle implements Highlighter {
   }
 
   /// Create a highlighter style that associates the given styles to
-  /// the given tags. The spec must be objects that hold a style tag
+  /// the given tags. The specs must be objects that hold a style tag
   /// or array of tags in their `tag` property, and either a single
   /// `class` property providing a static CSS class (for highlighter
   /// that rely on external styling), or a
@@ -61,9 +61,9 @@ export class HighlightStyle implements Highlighter {
   /// defined earlier.
   static define(specs: readonly TagStyle[], options?: {
     /// By default, highlighters apply to the entire document. You can
-    /// scope them to a single language by providing the language's
-    /// [top node](#language.Language.topNode) here.
-    scope?: NodeType,
+    /// scope them to a single language by providing the language
+    /// object or a language's top node type here.
+    scope?: Language | NodeType,
     /// Add a style to _all_ content. Probably only useful in
     /// combination with `scope`.
     all?: string | StyleSpec,
@@ -87,15 +87,13 @@ function getHighlighters(state: EditorState): readonly Highlighter[] | null {
   return main.length ? main : state.facet(fallbackHighlighter)
 }
 
-/// Wrap a highlighter function or
-/// [`HighlightStyle`](#language.HighlightStyle) instance in an editor
-/// extension that uses it to apply syntax highlighting to the editor
-/// content.
+/// Wrap a highlighter in an editor extension that uses it to apply
+/// syntax highlighting to the editor content.
 ///
 /// When multiple (non-fallback) styles are provided, the styling
 /// applied is the union of the classes they emit.
 export function syntaxHighlighting(highlighter: Highlighter, options?: {
-  /// When enabled, this marks the highlighter as a fallback which
+  /// When enabled, this marks the highlighter as a fallback, which
   /// only takes effect if no other highlighters are registered.
   fallback: boolean
 }): Extension {
@@ -116,8 +114,9 @@ export function syntaxHighlighting(highlighter: Highlighter, options?: {
 }
 
 /// Returns the CSS classes (if any) that the highlighters active in
-/// the given state would assign to the given a style
-/// [tags](https://lezer.codemirror.net/docs/ref#highlight.Tag) and (optional) language
+/// the state would assign to the given style
+/// [tags](https://lezer.codemirror.net/docs/ref#highlight.Tag) and
+/// (optional) language
 /// [scope](#language.HighlightStyle^define^options.scope).
 export function highlightingFor(state: EditorState, tags: readonly Tag[], scope?: NodeType): string | null {
   let highlighters = getHighlighters(state)

@@ -24,9 +24,9 @@
 
 ### Highlighting
 
-@syntaxHighlighting
-
 @HighlightStyle
+
+@syntaxHighlighting
 
 @TagStyle
 

@@ -193,7 +193,7 @@ function indentFrom(node: SyntaxNode | null, pos: number, base: IndentContext) {
 function topIndent() { return 0 }
 
 /// Objects of this type provide context information and helper
-/// methods to indentation functions.
+/// methods to indentation functions registered on syntax nodes.
 export class TreeIndentContext extends IndentContext {
   /// @internal
   constructor(

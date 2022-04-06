@@ -5,8 +5,8 @@ import {Text, TextIterator} from "@codemirror/text"
 import {EditorState, StateField, Transaction, Extension, StateEffect, Facet, ChangeDesc} from "@codemirror/state"
 import {ViewPlugin, ViewUpdate, EditorView, logException} from "@codemirror/view"
 
-/// Node prop stored in a grammar's top syntax node to provide the
-/// facet that stores language data for that language.
+/// Node prop stored in a parser's top syntax node to provide the
+/// facet that stores language-specific data for that language.
 export const languageDataProp = new NodeProp<Facet<{[name: string]: any}>>()
 
 /// Helper function to define a facet (to be added to the top syntax
@@ -29,7 +29,7 @@ export function defineLanguageFacet(baseData?: {[name: string]: any}) {
 /// via the [`StreamLanguage`](#stream-parser.StreamLanguage) subclass
 /// for stream parsers.
 export class Language {
-  /// The extension value to install this provider.
+  /// The extension value to install this as the document language.
   readonly extension: Extension
 
   /// The parser object. Can be useful when using this as a [nested
@@ -39,11 +39,11 @@ export class Language {
   /// Construct a language object. If you need to invoke this
   /// directly, first define a data facet with
   /// [`defineLanguageFacet`](#language.defineLanguageFacet), and then
-  /// configure your parser to attach it to the language's outer
-  /// syntax node.
+  /// configure your parser to [attach](#language.languageDataProp) it
+  /// to the language's outer syntax node.
   constructor(
-    /// The [language data](#state.EditorState.languageDataAt) data
-    /// facet used for this language.
+    /// The [language data](#state.EditorState.languageDataAt) facet
+    /// used for this language.
     readonly data: Facet<{[name: string]: any}>,
     parser: Parser,
     extraExtensions: Extension[] = []
@@ -157,8 +157,9 @@ export class LRLanguage extends Language {
 }
 
 /// Get the syntax tree for a state, which is the current (possibly
-/// incomplete) parse tree of active [language](#language.Language),
-/// or the empty tree if there is no language available.
+/// incomplete) parse tree of the active
+/// [language](#language.Language), or the empty tree if there is no
+/// language available.
 export function syntaxTree(state: EditorState): Tree {
   let field = state.field(Language.state, false)
   return field ? field.tree : Tree.empty
@@ -269,6 +270,7 @@ export class ParseContext {
     public fragments: readonly TreeFragment[] = [],
     /// @internal
     public tree: Tree,
+    /// @internal
     public treeLen: number,
     /// The current editor viewport (or some overapproximation
     /// thereof). Intended to be used for opportunistically avoiding
@@ -408,7 +410,7 @@ export class ParseContext {
   ///
   /// When `until` is given, a reparse will be scheduled when that
   /// promise resolves.
-  static getSkippingParser(until?: Promise<unknown>) {
+  static getSkippingParser(until?: Promise<unknown>): Parser {
     return new class extends Parser {
       createParse(
         input: Input,
@@ -595,7 +597,7 @@ export const language = Facet.define<Language, Language | null>({
   enables: [Language.state, parseWorker]
 })
 
-/// This class bundles a [language object](#language.Language) with an
+/// This class bundles a [language](#language.Language) with an
 /// optional set of supporting extensions. Language packages are
 /// encouraged to export a function that optionally takes a
 /// configuration object and returns a `LanguageSupport` instance, as
@@ -606,7 +608,7 @@ export class LanguageSupport {
   /// value itself.)
   extension: Extension
 
-  /// Create a support object.
+  /// Create a language support object.
   constructor(
     /// The language object.
     readonly language: Language,
