@@ -76,6 +76,8 @@ export class StreamLanguage<State> extends Language {
   stateAfter: NodeProp<State>
   /// @internal
   tokenTable: TokenTable
+  /// @internal
+  topNode: NodeType
 
   private constructor(parser: StreamParser<State>) {
     let data = defineLanguageFacet(parser.languageData)
@@ -85,7 +87,8 @@ export class StreamLanguage<State> extends Language {
         return new Parse(self, input, fragments, ranges)
       }
     }
-    super(data, impl, docID(data), [indentService.of((cx, pos) => this.getIndent(cx, pos))])
+    super(data, impl, [indentService.of((cx, pos) => this.getIndent(cx, pos))])
+    this.topNode = docID(data)
     self = this
     this.streamParser = p
     this.stateAfter = new NodeProp<State>({perNode: true})
