@@ -12,13 +12,15 @@ export {StringStream}
 /// copyable) object with state, in which it can store information
 /// about the current context.
 export interface StreamParser<State> {
+  /// Produce a start state for the parser.
+  startState?(indentUnit: number): State
   /// Read one token, advancing the stream past it, and returning a
   /// string indicating the token's style tag—either the name of one
   /// of the tags in
   /// [`tags`](https://lezer.codemirror.net/docs/ref#highlight.tags),
   /// or such a name suffixed by one or more tag
   /// [modifier](https://lezer.codemirror.net/docs/ref#highlight.Tag^defineModifier)
-  /// names, separated by spaces. For example `"keyword"` or
+  /// names, separated by periods. For example `"keyword"` or
   /// "`variableName.constant"`.
   ///
   /// It is okay to return a zero-length token, but only if that
@@ -28,8 +30,6 @@ export interface StreamParser<State> {
   /// This notifies the parser of a blank line in the input. It can
   /// update its state here if it needs to.
   blankLine?(state: State, indentUnit: number): void
-  /// Produce a start state for the parser.
-  startState?(indentUnit: number): State
   /// Copy a given state. By default, a shallow object copy is done
   /// which also copies arrays held at the top level of the object.
   copyState?(state: State): State
@@ -67,8 +67,8 @@ function defaultCopyState<State>(state: State) {
   return newState
 }
 
-/// A [language](#language.Language) class based on a streaming
-/// parser.
+/// A [language](#language.Language) class based on a CodeMirror
+/// 5-style [streaming parser](#stream-parser.StreamParser).
 export class StreamLanguage<State> extends Language {
   /// @internal
   streamParser: Required<StreamParser<State>>
@@ -95,6 +95,7 @@ export class StreamLanguage<State> extends Language {
     this.tokenTable = parser.tokenTable ? new TokenTable(p.tokenTable) : defaultTokenTable
   }
 
+  /// Define a stream language.
   static define<State>(spec: StreamParser<State>) { return new StreamLanguage(spec) }
 
   private getIndent(cx: IndentContext, pos: number) {
