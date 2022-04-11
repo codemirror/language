@@ -184,6 +184,16 @@ export function syntaxTreeAvailable(state: EditorState, upto = state.doc.length)
   return state.field(Language.state, false)?.context.isDone(upto) || false
 }
 
+/// Move parsing forward, and update the editor state afterwards to
+/// reflect the new tree. Will work for at most `timeout`
+/// milliseconds. Returns true if the parser managed get to the given
+/// position in that time.
+export function forceParsing(view: EditorView, upto = view.viewport.to, timeout = 100): boolean {
+  let success = ensureSyntaxTree(view.state, upto, timeout)
+  if (success != syntaxTree(view.state)) view.dispatch({})
+  return !!success
+}
+
 /// Tells you whether the language parser is planning to do more
 /// parsing work (in a `requestIdleCallback` pseudo-thread) or has
 /// stopped running, either because it parsed the entire document,

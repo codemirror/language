@@ -16,6 +16,8 @@
 
 @syntaxTreeAvailable
 
+@forceParsing
+
 @syntaxParserRunning
 
 @LanguageSupport
