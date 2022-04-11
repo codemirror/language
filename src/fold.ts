@@ -1,8 +1,7 @@
 import {combineConfig, EditorState, StateEffect, ChangeDesc, Facet, StateField, Extension} from "@codemirror/state"
 import {EditorView, BlockInfo, Command, Decoration, DecorationSet, WidgetType,
-        KeyBinding, ViewPlugin, ViewUpdate} from "@codemirror/view"
+        KeyBinding, ViewPlugin, ViewUpdate, gutter, GutterMarker} from "@codemirror/view"
 import {foldable, language, syntaxTree} from "@codemirror/language"
-import {gutter, GutterMarker} from "@codemirror/gutter"
 import {RangeSet, RangeSetBuilder} from "@codemirror/rangeset"
 
 type DocRange = {from: number, to: number}
