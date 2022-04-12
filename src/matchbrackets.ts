@@ -1,8 +1,7 @@
-import {combineConfig, EditorState, Facet, StateField, Extension} from "@codemirror/state"
+import {combineConfig, EditorState, Facet, StateField, Extension, Range} from "@codemirror/state"
 import {syntaxTree} from "@codemirror/language"
 import {EditorView} from "@codemirror/view"
 import {Decoration, DecorationSet} from "@codemirror/view"
-import {Range} from "@codemirror/rangeset"
 import {Tree, SyntaxNode, NodeType, NodeProp} from "@lezer/common"
 
 export interface Config {
