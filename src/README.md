@@ -71,3 +71,13 @@
 @flatIndent
 
 @indentOnInput
+
+### Bracket Matching
+
+@bracketMatching
+
+@Config
+
+@matchBrackets
+
+@MatchResult

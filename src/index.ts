@@ -7,3 +7,5 @@ export {IndentContext, getIndentUnit, indentString, indentOnInput, indentService
 export {foldService, foldNodeProp, foldInside, foldable} from "./fold"
 
 export {HighlightStyle, syntaxHighlighting, highlightingFor, TagStyle, defaultHighlightStyle} from "./highlight"
+
+export {bracketMatching, Config, matchBrackets, MatchResult} from "./matchbrackets"
