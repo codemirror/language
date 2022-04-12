@@ -1,8 +1,8 @@
-import {combineConfig, EditorState, StateEffect, ChangeDesc, Facet, StateField, Extension} from "@codemirror/state"
+import {combineConfig, EditorState, StateEffect, ChangeDesc, Facet, StateField, Extension,
+        RangeSet, RangeSetBuilder} from "@codemirror/state"
 import {EditorView, BlockInfo, Command, Decoration, DecorationSet, WidgetType,
         KeyBinding, ViewPlugin, ViewUpdate, gutter, GutterMarker} from "@codemirror/view"
 import {foldable, language, syntaxTree} from "@codemirror/language"
-import {RangeSet, RangeSetBuilder} from "@codemirror/rangeset"
 
 type DocRange = {from: number, to: number}
 
