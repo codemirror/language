@@ -4,7 +4,8 @@ export {language, Language, LRLanguage, defineLanguageFacet, syntaxTree, ensureS
 export {IndentContext, getIndentUnit, indentString, indentOnInput, indentService, getIndentation, indentUnit,
         TreeIndentContext, indentNodeProp, delimitedIndent, continuedIndent, flatIndent} from "./indent"
 
-export {foldService, foldNodeProp, foldInside, foldable} from "./fold"
+export {foldService, foldNodeProp, foldInside, foldable, foldCode, unfoldCode, foldAll, unfoldAll,
+        foldKeymap, codeFolding, foldGutter, foldedRanges, foldEffect, unfoldEffect} from "./fold"
 
 export {HighlightStyle, syntaxHighlighting, highlightingFor, TagStyle, defaultHighlightStyle} from "./highlight"
 
