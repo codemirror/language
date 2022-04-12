@@ -2,9 +2,8 @@ import {Tree, NodeType} from "@lezer/common"
 import {Tag, tags, tagHighlighter, Highlighter, highlightTree} from "@lezer/highlight"
 import {StyleSpec, StyleModule} from "style-mod"
 import {EditorView, ViewPlugin, ViewUpdate, Decoration, DecorationSet} from "@codemirror/view"
-import {EditorState, Prec, Facet, Extension} from "@codemirror/state"
+import {EditorState, Prec, Facet, Extension, RangeSetBuilder} from "@codemirror/state"
 import {syntaxTree, Language, languageDataProp} from "./language"
-import {RangeSetBuilder} from "@codemirror/rangeset"
 
 /// A highlight style associates CSS styles with higlighting
 /// [tags](https://lezer.codemirror.net/docs/ref#highlight.Tag).
