@@ -1,8 +1,7 @@
 import ist from "ist"
-import {StreamLanguage} from "@codemirror/stream-parser"
 import {EditorState} from "@codemirror/state"
 import {Tag} from "@lezer/highlight"
-import {syntaxTree, ensureSyntaxTree, getIndentation, Language} from "@codemirror/language"
+import {StreamLanguage, syntaxTree, ensureSyntaxTree, getIndentation, Language} from "@codemirror/language"
 import {SyntaxNode} from "@lezer/common"
 
 let startStates = 0, keywords = ["if", "else", "return"]

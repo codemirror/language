@@ -107,3 +107,16 @@ the fold state.
 @matchBrackets
 
 @MatchResult
+
+### Stream Parser
+
+Stream parsers provide a way to adapt language modes written in the
+CodeMirror 5 style (see
+[@codemirror/legacy-modes](https://github.com/codemirror/legacy-modes))
+to the `Language` interface.
+
+@StreamLanguage
+
+@StreamParser
+
+@StringStream

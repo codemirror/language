@@ -1,8 +1,8 @@
 import {Tree, Input, TreeFragment, NodeType, NodeSet, SyntaxNode, PartialParse, Parser, NodeProp} from "@lezer/common"
 import {Tag, tags, styleTags} from "@lezer/highlight"
-import {Language, defineLanguageFacet, languageDataProp, IndentContext, indentService,
-        getIndentUnit, syntaxTree, ParseContext} from "@codemirror/language"
 import {EditorState, Facet} from "@codemirror/state"
+import {Language, defineLanguageFacet, languageDataProp, syntaxTree, ParseContext} from "./language"
+import {IndentContext, indentService, getIndentUnit} from "./indent"
 import {StringStream} from "./stringstream"
 
 export {StringStream}

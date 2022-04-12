@@ -10,3 +10,7 @@ export {foldService, foldNodeProp, foldInside, foldable, foldCode, unfoldCode, f
 export {HighlightStyle, syntaxHighlighting, highlightingFor, TagStyle, defaultHighlightStyle} from "./highlight"
 
 export {bracketMatching, Config, matchBrackets, MatchResult} from "./matchbrackets"
+
+export {StreamLanguage, StreamParser} from "./stream-parser"
+
+export {StringStream} from "./stringstream"
