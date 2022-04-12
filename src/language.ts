@@ -1,8 +1,8 @@
 import {Tree, SyntaxNode, ChangedRange, TreeFragment, NodeProp, NodeType, Input,
         PartialParse, Parser, IterMode} from "@lezer/common"
 import type {LRParser, ParserConfig} from "@lezer/lr"
-import {Text, TextIterator} from "@codemirror/text"
-import {EditorState, StateField, Transaction, Extension, StateEffect, Facet, ChangeDesc} from "@codemirror/state"
+import {EditorState, StateField, Transaction, Extension, StateEffect, Facet,
+        ChangeDesc, Text, TextIterator} from "@codemirror/state"
 import {ViewPlugin, ViewUpdate, EditorView, logException} from "@codemirror/view"
 
 /// Node prop stored in a parser's top syntax node to provide the

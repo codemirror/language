@@ -1,6 +1,5 @@
 import {NodeProp, SyntaxNode, Tree} from "@lezer/common"
-import {EditorState, Extension, Facet} from "@codemirror/state"
-import {countColumn} from "@codemirror/text"
+import {EditorState, Extension, Facet, countColumn} from "@codemirror/state"
 import {syntaxTree} from "./language"
 
 /// Facet that defines a way to provide a function that computes the
