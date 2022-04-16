@@ -68,7 +68,7 @@ function defaultCopyState<State>(state: State) {
 }
 
 /// A [language](#language.Language) class based on a CodeMirror
-/// 5-style [streaming parser](#stream-parser.StreamParser).
+/// 5-style [streaming parser](#language.StreamParser).
 export class StreamLanguage<State> extends Language {
   /// @internal
   streamParser: Required<StreamParser<State>>

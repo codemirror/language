@@ -1,5 +1,6 @@
 export {language, Language, LRLanguage, defineLanguageFacet, syntaxTree, ensureSyntaxTree, languageDataProp,
-        ParseContext, LanguageSupport, LanguageDescription, syntaxTreeAvailable, syntaxParserRunning} from "./language"
+        ParseContext, LanguageSupport, LanguageDescription,
+        syntaxTreeAvailable, syntaxParserRunning, forceParsing} from "./language"
 
 export {IndentContext, getIndentUnit, indentString, indentOnInput, indentService, getIndentation, indentUnit,
         TreeIndentContext, indentNodeProp, delimitedIndent, continuedIndent, flatIndent} from "./indent"

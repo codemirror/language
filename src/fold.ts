@@ -71,8 +71,8 @@ function mapRange(range: DocRange, mapping: ChangeDesc) {
 /// State effect that can be attached to a transaction to fold the
 /// given range. (You probably only need this in exceptional
 /// circumstances—usually you'll just want to let
-/// [`foldCode`](#fold.foldCode) and the [fold
-/// gutter](#fold.foldGutter) create the transactions.)
+/// [`foldCode`](#language.foldCode) and the [fold
+/// gutter](#language.foldGutter) create the transactions.)
 export const foldEffect = StateEffect.define<DocRange>({map: mapRange})
 
 /// State effect that unfolds the given range (if it was folded).
@@ -115,7 +115,7 @@ const foldState = StateField.define<DecorationSet>({
   provide: f => EditorView.decorations.from(f)
 })
 
-/// Get a [range set](#rangeset.RangeSet) containing the folded ranges
+/// Get a [range set](#state.RangeSet) containing the folded ranges
 /// in the given state.
 export function foldedRanges(state: EditorState): DecorationSet {
   return state.field(foldState, false) || RangeSet.empty
@@ -199,10 +199,10 @@ export const unfoldAll: Command = view => {
 
 /// Default fold-related key bindings.
 ///
-///  - Ctrl-Shift-[ (Cmd-Alt-[ on macOS): [`foldCode`](#fold.foldCode).
-///  - Ctrl-Shift-] (Cmd-Alt-] on macOS): [`unfoldCode`](#fold.unfoldCode).
-///  - Ctrl-Alt-[: [`foldAll`](#fold.foldAll).
-///  - Ctrl-Alt-]: [`unfoldAll`](#fold.unfoldAll).
+///  - Ctrl-Shift-[ (Cmd-Alt-[ on macOS): [`foldCode`](#language.foldCode).
+///  - Ctrl-Shift-] (Cmd-Alt-] on macOS): [`unfoldCode`](#language.unfoldCode).
+///  - Ctrl-Alt-[: [`foldAll`](#language.foldAll).
+///  - Ctrl-Alt-]: [`unfoldAll`](#language.unfoldAll).
 export const foldKeymap: readonly KeyBinding[] = [
   {key: "Ctrl-Shift-[", mac: "Cmd-Alt-[", run: foldCode},
   {key: "Ctrl-Shift-]", mac: "Cmd-Alt-]", run: unfoldCode},

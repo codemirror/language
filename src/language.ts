@@ -26,7 +26,7 @@ export function defineLanguageFacet(baseData?: {[name: string]: any}) {
 /// managed as a [Lezer](https://lezer.codemirror.net) tree. The class
 /// can be used directly, via the [`LRLanguage`](#language.LRLanguage)
 /// subclass for [Lezer](https://lezer.codemirror.net/) LR parsers, or
-/// via the [`StreamLanguage`](#stream-parser.StreamLanguage) subclass
+/// via the [`StreamLanguage`](#language.StreamLanguage) subclass
 /// for stream parsers.
 export class Language {
   /// The extension value to install this as the document language.
