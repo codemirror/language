@@ -1,3 +1,25 @@
+## 0.20.0 (2022-04-20)
+
+### Breaking changes
+
+`HighlightStyle.get` is now called `highlightingFor`.
+
+`HighlightStyles` no longer function as extensions (to improve tree shaking), and must be wrapped with `syntaxHighlighting` to add to an editor configuration.
+
+`Language` objects no longer have a `topNode` property.
+
+### New features
+
+`HighlightStyle` and `defaultHighlightStyle` from the now-removed @codemirror/highlight package now live in this package.
+
+The new `forceParsing` function can be used to run the parser forward on an editor view.
+
+The exports that used to live in @codemirror/matchbrackets are now exported from this package.
+
+The @codemirror/fold package has been merged into this one.
+
+The exports from the old @codemirror/stream-parser package now live in this package.
+
 ## 0.19.10 (2022-03-31)
 
 ### Bug fixes
