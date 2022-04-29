@@ -2,7 +2,6 @@ import ist from "ist"
 import {getIndentUnit, indentString, indentUnit, ParseContext} from "@codemirror/language"
 import {EditorState, ChangeSet, Text} from "@codemirror/state"
 import {parser} from "@lezer/javascript"
-import {Tree} from "@lezer/common"
 
 let lines = `const {readFile} = require("fs");
 readFile("package.json", "utf8", (err, data) => {
@@ -13,7 +12,7 @@ for (let l0 = lines.length, i = l0; i < 5000; i++) lines[i] = lines[i % l0]
 let doc = Text.of(lines)
 
 function pContext(doc: Text) {
-  return new ParseContext(parser, EditorState.create({doc}), [], Tree.empty, 0, {from: 0, to: doc.length}, [], null)
+  return ParseContext.create(parser, EditorState.create({doc}), {from: 0, to: doc.length})
 }
 
 describe("ParseContext", () => {

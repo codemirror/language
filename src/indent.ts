@@ -183,7 +183,7 @@ function indentStrategy(tree: SyntaxNode): ((context: TreeIndentContext) => numb
 function indentFrom(node: SyntaxNode | null, pos: number, base: IndentContext) {
   for (; node; node = node.parent) {
     let strategy = indentStrategy(node)
-    if (strategy) return strategy(new TreeIndentContext(base, pos, node))
+    if (strategy) return strategy(TreeIndentContext.create(base, pos, node))
   }
   return null
 }
@@ -194,15 +194,20 @@ function topIndent() { return 0 }
 /// Objects of this type provide context information and helper
 /// methods to indentation functions registered on syntax nodes.
 export class TreeIndentContext extends IndentContext {
-  /// @internal
-  constructor(
+  private constructor(
     private base: IndentContext,
     /// The position at which indentation is being computed.
     readonly pos: number,
     /// The syntax tree node to which the indentation strategy
     /// applies.
-    readonly node: SyntaxNode) {
+    readonly node: SyntaxNode
+  ) {
     super(base.state, base.options)
+  }
+
+  /// @internal
+  static create(base: IndentContext, pos: number, node: SyntaxNode) {
+    return new TreeIndentContext(base, pos, node)
   }
 
   /// Get the text directly after `this.pos`, either the entire line
