@@ -30,6 +30,8 @@ export class HighlightStyle implements Highlighter {
       return cls
     }
 
+    const all = typeof options.all == "string" ? options.all : options.all ? def(options.all) : undefined
+
     const scopeOpt = options.scope
     this.scope = scopeOpt instanceof Language ? (type: NodeType) => type.prop(languageDataProp) == scopeOpt.data
       : scopeOpt ? (type: NodeType) => type == scopeOpt : undefined
@@ -38,7 +40,7 @@ export class HighlightStyle implements Highlighter {
       tag: style.tag,
       class: style.class as string || def(Object.assign({}, style, {tag: null}))
     })), {
-      all: typeof options.all == "string" ? options.all : options.all ? def(options.all) : undefined,
+      all: all,
     }).style
 
     this.module = modSpec ? new StyleModule(modSpec) : null
