@@ -40,7 +40,7 @@ export class HighlightStyle implements Highlighter {
       tag: style.tag,
       class: style.class as string || def(Object.assign({}, style, {tag: null}))
     })), {
-      all: all,
+      all,
     }).style
 
     this.module = modSpec ? new StyleModule(modSpec) : null
