@@ -1,3 +1,9 @@
+## 0.20.1 (2022-05-18)
+
+### Bug fixes
+
+Make sure `all` styles in the CSS generated for a `HighlightStyle` have a lower precedence than the other rules defined for the style. Use a shorthand property
+
 ## 0.20.0 (2022-04-20)
 
 ### Breaking changes
