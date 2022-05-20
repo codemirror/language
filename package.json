@@ -30,7 +30,8 @@
     "@codemirror/view": "^0.20.0",
     "@lezer/common": "^0.16.0",
     "@lezer/highlight": "^0.16.0",
-    "@lezer/lr": "^0.16.0"
+    "@lezer/lr": "^0.16.0",
+    "style-mod": "^4.0.0"
   },
   "devDependencies": {
     "@codemirror/buildhelper": "^0.1.5",
