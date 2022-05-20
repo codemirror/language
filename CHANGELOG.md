@@ -1,3 +1,9 @@
+## 0.20.2 (2022-05-20)
+
+### Bug fixes
+
+List style-mod as a dependency.
+
 ## 0.20.1 (2022-05-18)
 
 ### Bug fixes
