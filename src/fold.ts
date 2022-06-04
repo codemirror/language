@@ -267,15 +267,18 @@ interface FoldGutterConfig {
   /// A function that creates the DOM element used to indicate a
   /// given line is folded or can be folded. 
   /// When not given, the `openText`/`closeText` option will be used instead.
-  markerDOM?: ((open: boolean) => HTMLElement) | null,
+  markerDOM?: ((open: boolean) => HTMLElement) | null
   /// Text used to indicate that a given line can be folded. 
   /// Defaults to `"⌄"`.
-  openText?: string,
+  openText?: string
   /// Text used to indicate that a given line is folded. 
   /// Defaults to `"›"`.
-  closedText?: string,
+  closedText?: string
   /// Supply event handlers for DOM events on this gutter.
-  domEventHandlers?: Handlers,
+  domEventHandlers?: Handlers
+  /// When given, if this returns true for a given view update,
+  /// recompute the fold markers.
+  foldingChanged?: (update: ViewUpdate) => boolean
 }
 
 const foldGutterDefaults: Required<FoldGutterConfig> = {
@@ -283,6 +286,7 @@ const foldGutterDefaults: Required<FoldGutterConfig> = {
   closedText: "›",
   markerDOM: null,
   domEventHandlers: {},
+  foldingChanged: () => false
 }
 
 class FoldMarker extends GutterMarker {
@@ -321,7 +325,8 @@ export function foldGutter(config: FoldGutterConfig = {}): Extension {
       if (update.docChanged || update.viewportChanged ||
           update.startState.facet(language) != update.state.facet(language) ||
           update.startState.field(foldState, false) != update.state.field(foldState, false) ||
-          syntaxTree(update.startState) != syntaxTree(update.state))
+          syntaxTree(update.startState) != syntaxTree(update.state) ||
+          fullConfig.foldingChanged(update))
         this.markers = this.buildMarkers(update.view)
     }
 
