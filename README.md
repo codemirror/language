@@ -1,6 +1,6 @@
 # @codemirror/language [![NPM version](https://img.shields.io/npm/v/@codemirror/language.svg)](https://www.npmjs.org/package/@codemirror/language)
 
-[ [**WEBSITE**](https://codemirror.net/) | [**DOCS**](https://codemirror.net/docs/ref/#language) | [**ISSUES**](https://github.com/codemirror/codemirror.next/issues) | [**FORUM**](https://discuss.codemirror.net/c/next/) | [**CHANGELOG**](https://github.com/codemirror/language/blob/main/CHANGELOG.md) ]
+[ [**WEBSITE**](https://codemirror.net/) | [**DOCS**](https://codemirror.net/docs/ref/#language) | [**ISSUES**](https://github.com/codemirror/dev/issues) | [**FORUM**](https://discuss.codemirror.net/c/next/) | [**CHANGELOG**](https://github.com/codemirror/language/blob/main/CHANGELOG.md) ]
 
 This package implements the language support infrastructure for the
 [CodeMirror](https://codemirror.net/) code editor.
