@@ -1,3 +1,9 @@
+## 6.0.0 (2022-06-08)
+
+### New features
+
+The `foldingChanged` option to `foldGutter` can now be used to trigger a recomputation of the fold markers.
+
 ## 0.20.2 (2022-05-20)
 
 ### Bug fixes
