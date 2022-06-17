@@ -604,7 +604,10 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
   eventHandlers: {focus() { this.scheduleWork() }}
 })
 
-/// The facet used to associate a language with an editor state.
+/// The facet used to associate a language with an editor state. Used
+/// by `Language` object's `extension` property (so you don't need to
+/// manually wrap your languages in this). Can be used to access the
+/// current language on a state.
 export const language = Facet.define<Language, Language | null>({
   combine(languages) { return languages.length ? languages[0] : null },
   enables: [Language.state, parseWorker]
