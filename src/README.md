@@ -68,6 +68,8 @@ the fold state.
 
 @foldedRanges
 
+@foldState
+
 @foldEffect
 
 @unfoldEffect
