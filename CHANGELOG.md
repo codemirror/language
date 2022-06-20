@@ -1,3 +1,9 @@
+## 6.1.0 (2022-06-20)
+
+### New features
+
+The `foldState` field is now public, and can be used to serialize and deserialize the fold state.
+
 ## 6.0.0 (2022-06-08)
 
 ### New features
