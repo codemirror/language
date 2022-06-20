@@ -87,7 +87,12 @@ function selectedLines(view: EditorView) {
   return lines
 }
 
-const foldState = StateField.define<DecorationSet>({
+/// The state field that stores the folded ranges (as a [decoration
+/// set](#view.DecorationSet)). Can be passed to
+/// [`EditorState.toJSON`](#state.EditorState.toJSON) and
+/// [`fromJSON`](#state.EditorState^fromJSON) to serialize the fold
+/// state.
+export const foldState = StateField.define<DecorationSet>({
   create() {
     return Decoration.none
   },
@@ -112,7 +117,22 @@ const foldState = StateField.define<DecorationSet>({
     }
     return folded
   },
-  provide: f => EditorView.decorations.from(f)
+  provide: f => EditorView.decorations.from(f),
+  toJSON(folded, state) {
+    let ranges: number[] = []
+    folded.between(0, state.doc.length, (from, to) => {ranges.push(from, to)})
+    return ranges
+  },
+  fromJSON(value) {
+    if (!Array.isArray(value) || value.length % 2) throw new RangeError("Invalid JSON for fold state")
+    let ranges = []
+    for (let i = 0; i < value.length;) {
+      let from = value[i++], to = value[i++]
+      if (typeof from != "number" || typeof to != "number") throw new RangeError("Invalid JSON for fold state")
+      ranges.push(foldWidget.range(from, to))
+    }
+    return Decoration.set(ranges, true)
+  }
 })
 
 /// Get a [range set](#state.RangeSet) containing the folded ranges

@@ -40,7 +40,7 @@ describe("ParseContext", () => {
   })
 })
 
-describe("indentation", () => {
+describe("Indentation", () => {
   it("tracks indent units", () => {
     let s0 = EditorState.create({})
     ist(getIndentUnit(s0), 2)
