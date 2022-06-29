@@ -162,7 +162,7 @@ function matchPlainBrackets(state: EditorState, pos: number, dir: number, tree: 
     let basePos = pos + distance * dir
     for (let pos = dir > 0 ? 0 : text.length - 1, end = dir > 0 ? text.length : -1; pos != end; pos += dir) {
       let found = brackets.indexOf(text[pos])
-      if (found < 0 || tree.resolve(basePos + pos, 1).type != tokenType) continue
+      if (found < 0 || tree.resolveInner(basePos + pos, 1).type != tokenType) continue
       if ((found % 2 == 0) == (dir > 0)) {
         depth++
       } else if (depth == 1) { // Closing
