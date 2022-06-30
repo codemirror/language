@@ -1,5 +1,5 @@
 import {NodeProp, SyntaxNode, Tree} from "@lezer/common"
-import {EditorState, Extension, Facet, countColumn} from "@codemirror/state"
+import {EditorState, Extension, Facet, countColumn, ChangeSpec} from "@codemirror/state"
 import {syntaxTree} from "./language"
 
 /// Facet that defines a way to provide a function that computes the
@@ -55,6 +55,28 @@ export function getIndentation(context: IndentContext | EditorState, pos: number
   }
   let tree = syntaxTree(context.state)
   return tree ? syntaxIndentation(context, tree, pos) : null
+}
+
+/// Create a change set that auto-indents all lines touched by the
+/// given document range.
+export function indentRange(state: EditorState, from: number, to: number) {
+  let updated: {[lineStart: number]: number} = Object.create(null)
+  let context = new IndentContext(state, {overrideIndentation: start => updated[start] ?? -1})
+  let changes: ChangeSpec[] = []
+  for (let pos = from; pos <= to;) {
+    let line = state.doc.lineAt(pos)
+    let indent = getIndentation(context, line.from)
+    if (indent == null) continue
+    if (!/\S/.test(line.text)) indent = 0
+    let cur = /^\s*/.exec(line.text)![0]
+    let norm = indentString(state, indent)
+    if (cur != norm) {
+      updated[line.from] = indent
+      changes.push({from: line.from, to: line.from + cur.length, insert: norm})
+    }
+    pos = line.to + 1
+  }
+  return state.changes(changes)
 }
 
 /// Indentation contexts are used when calling [indentation

@@ -2,7 +2,7 @@ export {language, Language, LRLanguage, defineLanguageFacet, syntaxTree, ensureS
         ParseContext, LanguageSupport, LanguageDescription,
         syntaxTreeAvailable, syntaxParserRunning, forceParsing} from "./language"
 
-export {IndentContext, getIndentUnit, indentString, indentOnInput, indentService, getIndentation, indentUnit,
+export {IndentContext, getIndentUnit, indentString, indentOnInput, indentService, getIndentation, indentRange, indentUnit,
         TreeIndentContext, indentNodeProp, delimitedIndent, continuedIndent, flatIndent} from "./indent"
 
 export {foldService, foldNodeProp, foldInside, foldable, foldCode, unfoldCode, foldAll, unfoldAll,

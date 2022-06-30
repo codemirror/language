@@ -82,6 +82,8 @@ the fold state.
 
 @getIndentation
 
+@indentRange
+
 @indentUnit
 
 @getIndentUnit
