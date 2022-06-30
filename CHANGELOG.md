@@ -1,3 +1,13 @@
+## 6.2.0 (2022-06-30)
+
+### Bug fixes
+
+Fix a bug that prevented bracket matching to recognize plain brackets inside a language parsed as an overlay.
+
+### New features
+
+The `indentRange` function provides an easy way to programatically auto-indent a range of the document.
+
 ## 6.1.0 (2022-06-20)
 
 ### New features
