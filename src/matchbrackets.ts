@@ -136,12 +136,12 @@ function matchMarkedBrackets(_state: EditorState, _pos: number, dir: -1 | 1, tok
       } else if (matchingNodes(cursor.type, dir, brackets)) {
         depth++
       } else if (matchingNodes(cursor.type, -dir as -1 | 1, brackets)) {
-        depth--
         if (depth == 0) return {
           start: firstToken,
           end: cursor.from == cursor.to ? undefined : {from: cursor.from, to: cursor.to},
           matched: false
         }
+        depth--
       }
     }
   } while (dir < 0 ? cursor.prevSibling() : cursor.nextSibling())
