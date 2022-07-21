@@ -65,6 +65,7 @@ export function indentRange(state: EditorState, from: number, to: number) {
   let changes: ChangeSpec[] = []
   for (let pos = from; pos <= to;) {
     let line = state.doc.lineAt(pos)
+    pos = line.to + 1
     let indent = getIndentation(context, line.from)
     if (indent == null) continue
     if (!/\S/.test(line.text)) indent = 0
@@ -74,7 +75,6 @@ export function indentRange(state: EditorState, from: number, to: number) {
       updated[line.from] = indent
       changes.push({from: line.from, to: line.from + cur.length, insert: norm})
     }
-    pos = line.to + 1
   }
   return state.changes(changes)
 }
