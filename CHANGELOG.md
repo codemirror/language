@@ -1,3 +1,11 @@
+## 6.2.1 (2022-07-21)
+
+### Bug fixes
+
+Fix a bug where `bracketMatching` would incorrectly match nested brackets in syntax trees that put multiple pairs of brackets in the same parent node.
+
+Fix a bug that could cause `indentRange` to loop infinitely.
+
 ## 6.2.0 (2022-06-30)
 
 ### Bug fixes
