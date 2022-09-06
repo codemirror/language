@@ -3,8 +3,10 @@ import {EditorState, Extension, Facet, countColumn, ChangeSpec} from "@codemirro
 import {syntaxTree} from "./language"
 
 /// Facet that defines a way to provide a function that computes the
-/// appropriate indentation depth at the start of a given line, or
-/// `null` to indicate no appropriate indentation could be determined.
+/// appropriate indentation depth, as a column number (see
+/// [`indentString`](#language.indentString)), at the start of a given
+/// line, or `null` to indicate no appropriate indentation could be
+/// determined.
 export const indentService = Facet.define<(context: IndentContext, pos: number) => number | null>()
 
 /// Facet for overriding the unit by which indentation happens.
@@ -41,12 +43,13 @@ export function indentString(state: EditorState, cols: number) {
   return result
 }
 
-/// Get the indentation at the given position. Will first consult any
-/// [indent services](#language.indentService) that are registered,
-/// and if none of those return an indentation, this will check the
-/// syntax tree for the [indent node prop](#language.indentNodeProp)
-/// and use that if found. Returns a number when an indentation could
-/// be determined, and null otherwise.
+/// Get the indentation, as a column number, at the given position.
+/// Will first consult any [indent services](#language.indentService)
+/// that are registered, and if none of those return an indentation,
+/// this will check the syntax tree for the [indent node
+/// prop](#language.indentNodeProp) and use that if found. Returns a
+/// number when an indentation could be determined, and null
+/// otherwise.
 export function getIndentation(context: IndentContext | EditorState, pos: number): number | null {
   if (context instanceof EditorState) context = new IndentContext(context)
   for (let service of context.state.facet(indentService)) {
@@ -178,8 +181,9 @@ export class IndentContext {
 
 /// A syntax tree node prop used to associate indentation strategies
 /// with node types. Such a strategy is a function from an indentation
-/// context to a column number or null, where null indicates that no
-/// definitive indentation can be determined.
+/// context to a column number (see also
+/// [`indentString`](#language.indentString)) or null, where null
+/// indicates that no definitive indentation can be determined.
 export const indentNodeProp = new NodeProp<(context: TreeIndentContext) => number | null>()
 
 // Compute the indentation for a given position from the syntax tree.
