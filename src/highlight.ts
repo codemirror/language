@@ -21,8 +21,11 @@ export class HighlightStyle implements Highlighter {
   readonly style: (tags: readonly Tag[]) => string | null
   readonly scope: ((type: NodeType) => boolean) | undefined
 
-  private constructor(spec: readonly TagStyle[],
-                      options: {scope?: NodeType | Language, all?: string | StyleSpec, themeType?: "dark" | "light"}) {
+  private constructor(
+    /// The tag styles used to create this highlight style.
+    readonly specs: readonly TagStyle[],
+    options: {scope?: NodeType | Language, all?: string | StyleSpec, themeType?: "dark" | "light"}
+  ) {
     let modSpec: {[name: string]: StyleSpec} | undefined
     function def(spec: StyleSpec) {
       let cls = StyleModule.newName()
@@ -36,7 +39,7 @@ export class HighlightStyle implements Highlighter {
     this.scope = scopeOpt instanceof Language ? (type: NodeType) => type.prop(languageDataProp) == scopeOpt.data
       : scopeOpt ? (type: NodeType) => type == scopeOpt : undefined
 
-    this.style = tagHighlighter(spec.map(style => ({
+    this.style = tagHighlighter(specs.map(style => ({
       tag: style.tag,
       class: style.class as string || def(Object.assign({}, style, {tag: null}))
     })), {
