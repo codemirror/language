@@ -1,3 +1,11 @@
+## 6.3.0 (2022-10-24)
+
+### New features
+
+`HighlightStyle` objects now have a `specs` property holding the tag styles that were used to define them.
+
+`Language` objects now have a `name` field holding the language name.
+
 ## 6.2.1 (2022-07-21)
 
 ### Bug fixes
