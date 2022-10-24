@@ -46,7 +46,9 @@ export class Language {
     /// used for this language.
     readonly data: Facet<{[name: string]: any}>,
     parser: Parser,
-    extraExtensions: Extension[] = []
+    extraExtensions: Extension[] = [],
+    /// A language name.
+    readonly name: string = ""
   ) {
     // Kludge to define EditorState.tree as a debugging helper,
     // without the EditorState package actually knowing about
@@ -126,13 +128,14 @@ function languageDataFacetAt(state: EditorState, pos: number, side: -1 | 0 | 1) 
 /// [LR parsers](https://lezer.codemirror.net/docs/ref#lr.LRParser)
 /// parsers.
 export class LRLanguage extends Language {
-  private constructor(data: Facet<{[name: string]: any}>,
-                      readonly parser: LRParser) {
-    super(data, parser)
+  private constructor(data: Facet<{[name: string]: any}>, readonly parser: LRParser, name?: string) {
+    super(data, parser, [], name)
   }
 
   /// Define a language from a parser.
   static define(spec: {
+    /// The [name](#Language.name) of the language.
+    name?: string,
     /// The parser to use. Should already have added editor-relevant
     /// node props (and optionally things like dialect and top rule)
     /// configured.
@@ -144,13 +147,13 @@ export class LRLanguage extends Language {
     let data = defineLanguageFacet(spec.languageData)
     return new LRLanguage(data, spec.parser.configure({
       props: [languageDataProp.add(type => type.isTop ? data : undefined)]
-    }))
+    }), spec.name)
   }
 
   /// Create a new instance of this language with a reconfigured
-  /// version of its parser.
-  configure(options: ParserConfig): LRLanguage {
-    return new LRLanguage(this.data, this.parser.configure(options))
+  /// version of its parser and optionally a new name.
+  configure(options: ParserConfig, name?: string): LRLanguage {
+    return new LRLanguage(this.data, this.parser.configure(options), name || this.name)
   }
 
   get allowsNesting() { return this.parser.hasWrappers() }
@@ -610,7 +613,14 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
 /// current language on a state.
 export const language = Facet.define<Language, Language | null>({
   combine(languages) { return languages.length ? languages[0] : null },
-  enables: [Language.state, parseWorker]
+  enables: language => [
+    Language.state,
+    parseWorker,
+    EditorView.contentAttributes.compute([language], state => {
+      let lang = state.facet(language)
+      return lang && lang.name ? {"data-language": lang.name} : {} as {}
+    })
+  ]
 })
 
 /// This class bundles a [language](#language.Language) with an

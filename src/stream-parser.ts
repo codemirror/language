@@ -12,6 +12,8 @@ export {StringStream}
 /// copyable) object with state, in which it can store information
 /// about the current context.
 export interface StreamParser<State> {
+  /// A name for this language.
+  name?: string
   /// Produce a start state for the parser.
   startState?(indentUnit: number): State
   /// Read one token, advancing the stream past it, and returning a
@@ -47,6 +49,7 @@ export interface StreamParser<State> {
 
 function fullParser<State>(spec: StreamParser<State>): Required<StreamParser<State>> {
   return {
+    name: spec.name || "",
     token: spec.token,
     blankLine: spec.blankLine || (() => {}),
     startState: spec.startState || (() => (true as any)),
@@ -87,7 +90,7 @@ export class StreamLanguage<State> extends Language {
         return new Parse(self, input, fragments, ranges)
       }
     }
-    super(data, impl, [indentService.of((cx, pos) => this.getIndent(cx, pos))])
+    super(data, impl, [indentService.of((cx, pos) => this.getIndent(cx, pos))], parser.name)
     this.topNode = docID(data)
     self = this
     this.streamParser = p
