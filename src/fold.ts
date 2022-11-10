@@ -28,7 +28,7 @@ export function foldInside(node: SyntaxNode): {from: number, to: number} | null 
 function syntaxFolding(state: EditorState, start: number, end: number) {
   let tree = syntaxTree(state)
   if (tree.length < end) return null
-  let inner = tree.resolveInner(end)
+  let inner = tree.resolveInner(end, 1)
   let found: null | {from: number, to: number} = null
   for (let cur: SyntaxNode | null = inner; cur; cur = cur.parent) {
     if (cur.to <= end || cur.from > end) continue
