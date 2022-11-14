@@ -1,3 +1,11 @@
+## 6.3.1 (2022-11-14)
+
+### Bug fixes
+
+Make syntax-based folding include syntax nodes that start right at the end of a line as potential fold targets.
+
+Fix the `indentService` protocol to allow a distinction between declining to handle the indentation and returning null to indicate the line has no definite indentation.
+
 ## 6.3.0 (2022-10-24)
 
 ### New features
