@@ -5,9 +5,11 @@ import {syntaxTree} from "./language"
 /// Facet that defines a way to provide a function that computes the
 /// appropriate indentation depth, as a column number (see
 /// [`indentString`](#language.indentString)), at the start of a given
-/// line, or `null` to indicate no appropriate indentation could be
-/// determined.
-export const indentService = Facet.define<(context: IndentContext, pos: number) => number | null>()
+/// line. A return value of `null` indicates no indentation can be
+/// determined, and the line should inherit the indentation of the one
+/// above it. A return value of `undefined` defers to the next indent
+/// service.
+export const indentService = Facet.define<(context: IndentContext, pos: number) => number | null | undefined>()
 
 /// Facet for overriding the unit by which indentation happens.
 /// Should be a string consisting either entirely of spaces or
@@ -54,7 +56,7 @@ export function getIndentation(context: IndentContext | EditorState, pos: number
   if (context instanceof EditorState) context = new IndentContext(context)
   for (let service of context.state.facet(indentService)) {
     let result = service(context, pos)
-    if (result != null) return result
+    if (result !== undefined) return result
   }
   let tree = syntaxTree(context.state)
   return tree ? syntaxIndentation(context, tree, pos) : null
