@@ -193,7 +193,7 @@ const treeHighlighter = Prec.high(ViewPlugin.fromClass(TreeHighlighter, {
 /// A default highlight style (works well with light themes).
 export const defaultHighlightStyle = HighlightStyle.define([
   {tag: tags.meta,
-   color: "#7a757a"},
+   color: "#404740"},
   {tag: tags.link,
    textDecoration: "underline"},
   {tag: tags.heading,
