@@ -69,7 +69,7 @@ describe("StreamLanguage", () => {
     let state = EditorState.create({doc: line.repeat(100), extensions: language})
     setViewport(state, 4000, 8000)
     state = state.update({changes: {from: 3000, insert: line.repeat(10000)}}).state
-    let tree = ensureSyntaxTree(state, state.doc.length, 5000)!
+    let tree = syntaxTree(state)
     // No nodes in the skipped range
     ist(tree.resolve(10000, 1).name, "Document")
     // But the viewport is populated
@@ -80,7 +80,7 @@ describe("StreamLanguage", () => {
     ist(treeSize, 4000, "<")
     setViewport(state, 4000, 8000)
     state = state.update({changes: {from: 100000, insert: "?"}}).state
-    tree = ensureSyntaxTree(state, state.doc.length, 5000)!
+    tree = syntaxTree(state)
     ist(tree.resolve(5000, 1).name, "number")
     ist(tree.resolve(50000, 1).name, "Document")
   })
