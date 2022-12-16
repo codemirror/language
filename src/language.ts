@@ -173,7 +173,12 @@ export function syntaxTree(state: EditorState): Tree {
 /// up to that point if the tree isn't already available.
 export function ensureSyntaxTree(state: EditorState, upto: number, timeout = 50): Tree | null {
   let parse = state.field(Language.state, false)?.context
-  return !parse ? null : parse.isDone(upto) || parse.work(timeout, upto) ? parse.tree : null
+  if (!parse) return null
+  let oldVieport = parse.viewport
+  parse.updateViewport({from: 0, to: upto})
+  let result = parse.isDone(upto) || parse.work(timeout, upto) ? parse.tree : null
+  parse.updateViewport(oldVieport)
+  return result
 }
 
 /// Queries whether there is a full syntax tree available up to the
