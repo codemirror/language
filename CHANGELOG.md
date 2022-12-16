@@ -1,3 +1,9 @@
+## 6.3.2 (2022-12-16)
+
+### Bug fixes
+
+Fix a bug that caused `ensureSyntaxTree` to return incomplete trees when using a viewport-aware parser like `StreamLanguage`.
+
 ## 6.3.1 (2022-11-14)
 
 ### Bug fixes
