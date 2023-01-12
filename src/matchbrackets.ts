@@ -1,7 +1,7 @@
 import {combineConfig, EditorState, Facet, StateField, Extension, Range} from "@codemirror/state"
 import {syntaxTree} from "./language"
 import {EditorView, Decoration, DecorationSet} from "@codemirror/view"
-import {Tree, SyntaxNode, NodeType, NodeProp} from "@lezer/common"
+import {Tree, SyntaxNode, SyntaxNodeRef, NodeType, NodeProp} from "@lezer/common"
 
 export interface Config {
   /// Whether the bracket matching should look at the character after
@@ -88,6 +88,14 @@ export function bracketMatching(config: Config = {}): Extension {
   return [bracketMatchingConfig.of(config), bracketMatchingUnique]
 }
 
+/// When larger syntax nodes, such as HTML tags, are marked as
+/// opening/closing, it can be a bit messy to treat the whole node as
+/// a matchable bracket. This node prop allows you to define, for such
+/// a node, a ‘handle’—the part of the node that is highlighted, and
+/// that the cursor must be on to activate highlighting in the first
+/// place.
+export const bracketMatchingHandle = new NodeProp<(node: SyntaxNode) => SyntaxNode | null>()
+
 function matchingNodes(node: NodeType, dir: -1 | 1, brackets: string): null | readonly string[] {
   let byProp = node.prop(dir < 0 ? NodeProp.openedBy : NodeProp.closedBy)
   if (byProp) return byProp
@@ -111,6 +119,11 @@ export interface MatchResult {
   matched: boolean
 }
 
+function findHandle(node: SyntaxNodeRef) {
+  let hasHandle = node.type.prop(bracketMatchingHandle)
+  return hasHandle ? hasHandle(node.node) : node
+}
+
 /// Find the matching bracket for the token at `pos`, scanning
 /// direction `dir`. Only the `brackets` and `maxScanDistance`
 /// properties are used from `config`, if given. Returns null if no
@@ -120,26 +133,34 @@ export function matchBrackets(state: EditorState, pos: number, dir: -1 | 1, conf
   let tree = syntaxTree(state), node = tree.resolveInner(pos, dir)
   for (let cur: SyntaxNode | null = node; cur; cur = cur.parent) {
     let matches = matchingNodes(cur.type, dir, brackets)
-    if (matches && cur.from < cur.to) return matchMarkedBrackets(state, pos, dir, cur, matches, brackets)
+    if (matches && cur.from < cur.to) {
+      let handle = findHandle(cur)
+      if (handle && (dir > 0 ? pos >= handle.from && pos < handle.to : pos > handle.from && pos <= handle.to))
+        return matchMarkedBrackets(state, pos, dir, cur, handle, matches, brackets)
+    }
   }
   return matchPlainBrackets(state, pos, dir, tree, node.type, maxScanDistance, brackets)
 }
 
 function matchMarkedBrackets(_state: EditorState, _pos: number, dir: -1 | 1, token: SyntaxNode,
-                             matching: readonly string[], brackets: string) {
-  let parent = token.parent, firstToken = {from: token.from, to: token.to}
+                             handle: SyntaxNodeRef, matching: readonly string[], brackets: string) {
+  let parent = token.parent, firstToken = {from: handle.from, to: handle.to}
   let depth = 0, cursor = parent?.cursor()
   if (cursor && (dir < 0 ? cursor.childBefore(token.from) : cursor.childAfter(token.to))) do {
     if (dir < 0 ? cursor.to <= token.from : cursor.from >= token.to) {
       if (depth == 0 && matching.indexOf(cursor.type.name) > -1 && cursor.from < cursor.to) {
-        return {start: firstToken, end: {from: cursor.from, to: cursor.to}, matched: true}
+        let endHandle = findHandle(cursor)
+        return {start: firstToken, end: endHandle ? {from: endHandle.from, to: endHandle.to} : undefined, matched: true}
       } else if (matchingNodes(cursor.type, dir, brackets)) {
         depth++
       } else if (matchingNodes(cursor.type, -dir as -1 | 1, brackets)) {
-        if (depth == 0) return {
-          start: firstToken,
-          end: cursor.from == cursor.to ? undefined : {from: cursor.from, to: cursor.to},
-          matched: false
+        if (depth == 0) {
+          let endHandle = findHandle(cursor)
+          return {
+            start: firstToken,
+            end: endHandle && endHandle.from < endHandle.to ? {from: endHandle.from, to: endHandle.to} : undefined,
+            matched: false
+          }
         }
         depth--
       }
