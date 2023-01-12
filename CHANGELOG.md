@@ -1,3 +1,9 @@
+## 6.4.0 (2023-01-12)
+
+### New features
+
+The `bracketMatchingHandle` node prop can now be used to limit bracket matching behavior for larger nodes to a single subnode (for example the tag name of an HTML tag).
+
 ## 6.3.2 (2022-12-16)
 
 ### Bug fixes
