@@ -217,9 +217,11 @@ class DocInput implements Input {
   cursorPos = 0
   string = ""
 
-  constructor(readonly doc: Text, readonly length: number = doc.length) {
+  constructor(readonly doc: Text) {
     this.cursor = doc.iter()
   }
+
+  get length() { return this.doc.length }
 
   private syncTo(pos: number) {
     this.string = this.cursor.next(pos - this.cursorPos).value
