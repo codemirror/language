@@ -217,6 +217,34 @@ export const unfoldAll: Command = view => {
   return true
 }
 
+// Find the foldable region containing the given line, if one exists
+function foldableContainer(view: EditorView, lineBlock: BlockInfo) {
+  // Look backwards through line blocks until we find a foldable region that
+  // intersects with the line
+  let line: BlockInfo | null = lineBlock
+  while (line) {
+    let foldableRegion = foldable(view.state, line.from, line.to)
+    if (foldableRegion && foldableRegion.to >= lineBlock.from) return foldableRegion
+    line = line.from > 0 ? view.lineBlockAt(line.from - 1) : null
+  }
+  return null
+}
+
+export const toggleFold: Command = (view) => {
+  let effects: StateEffect<any>[] = []
+  for (let line of selectedLines(view)) {
+    let folded = findFold(view.state, line.from, line.to)
+    if (folded) {
+      effects.push(unfoldEffect.of(folded), announceFold(view, folded, false))
+    } else {
+      let foldRange = foldableContainer(view, line)
+      if (foldRange) effects.push(foldEffect.of(foldRange), announceFold(view, foldRange))
+    }
+  }
+  if (effects.length > 0) view.dispatch({effects: maybeEnable(view.state, effects)})
+  return !!effects.length
+}
+
 /// Default fold-related key bindings.
 ///
 ///  - Ctrl-Shift-[ (Cmd-Alt-[ on macOS): [`foldCode`](#language.foldCode).
@@ -227,7 +255,8 @@ export const foldKeymap: readonly KeyBinding[] = [
   {key: "Ctrl-Shift-[", mac: "Cmd-Alt-[", run: foldCode},
   {key: "Ctrl-Shift-]", mac: "Cmd-Alt-]", run: unfoldCode},
   {key: "Ctrl-Alt-[", run: foldAll},
-  {key: "Ctrl-Alt-]", run: unfoldAll}
+  {key: "Ctrl-Alt-]", run: unfoldAll},
+  {key: "F2", run: toggleFold}
 ]
 
 interface FoldConfig {
