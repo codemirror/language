@@ -53,6 +53,8 @@ folding (temporarily hiding pieces of code).
 
 @unfoldCode
 
+@toggleFold
+
 @foldAll
 
 @unfoldAll

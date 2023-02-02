@@ -221,15 +221,17 @@ export const unfoldAll: Command = view => {
 function foldableContainer(view: EditorView, lineBlock: BlockInfo) {
   // Look backwards through line blocks until we find a foldable region that
   // intersects with the line
-  let line: BlockInfo | null = lineBlock
-  while (line) {
+  for (let line = lineBlock;;) {
     let foldableRegion = foldable(view.state, line.from, line.to)
-    if (foldableRegion && foldableRegion.to >= lineBlock.from) return foldableRegion
-    line = line.from > 0 ? view.lineBlockAt(line.from - 1) : null
+    if (foldableRegion && foldableRegion.to > lineBlock.from) return foldableRegion
+    if (!line.from) return null
+    line = view.lineBlockAt(line.from - 1)
   }
-  return null
 }
 
+/// Toggle folding at cursors. Unfolds if there is an existing fold
+/// starting in that line, tries to find a foldable range around it
+/// otherwise.
 export const toggleFold: Command = (view) => {
   let effects: StateEffect<any>[] = []
   for (let line of selectedLines(view)) {
@@ -255,8 +257,7 @@ export const foldKeymap: readonly KeyBinding[] = [
   {key: "Ctrl-Shift-[", mac: "Cmd-Alt-[", run: foldCode},
   {key: "Ctrl-Shift-]", mac: "Cmd-Alt-]", run: unfoldCode},
   {key: "Ctrl-Alt-[", run: foldAll},
-  {key: "Ctrl-Alt-]", run: unfoldAll},
-  {key: "F2", run: toggleFold}
+  {key: "Ctrl-Alt-]", run: unfoldAll}
 ]
 
 interface FoldConfig {
