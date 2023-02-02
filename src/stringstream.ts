@@ -29,7 +29,8 @@ export class StringStream {
     public string: string,
     private tabSize: number,
     /// The current indent unit size.
-    public indentUnit: number
+    public indentUnit: number,
+    private overrideIndent?: number
   ) {}
 
   /// True if we are at the end of the line.
@@ -99,7 +100,7 @@ export class StringStream {
 
   /// Get the indentation column of the current line.
   indentation() {
-    return countCol(this.string, null, this.tabSize)
+    return this.overrideIndent ?? countCol(this.string, null, this.tabSize)
   }
 
   /// Match the input against the given string or regular expression

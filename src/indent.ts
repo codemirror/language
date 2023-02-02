@@ -112,7 +112,7 @@ export class IndentContext {
       /// [`insertNewlineAndIndent`](#commands.insertNewlineAndIndent)).
       simulateBreak?: number,
       /// When `simulateBreak` is given, this can be used to make the
-      /// simulate break behave like a double line break.
+      /// simulated break behave like a double line break.
       simulateDoubleBreak?: boolean
     } = {}
   ) {

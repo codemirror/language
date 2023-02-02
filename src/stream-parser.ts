@@ -70,6 +70,8 @@ function defaultCopyState<State>(state: State) {
   return newState
 }
 
+const IndentedFrom = new WeakMap<EditorState, number>()
+
 /// A [language](#language.Language) class based on a CodeMirror
 /// 5-style [streaming parser](#language.StreamParser).
 export class StreamLanguage<State> extends Language {
@@ -105,14 +107,21 @@ export class StreamLanguage<State> extends Language {
     let tree = syntaxTree(cx.state), at: SyntaxNode | null = tree.resolve(pos)
     while (at && at.type != this.topNode) at = at.parent
     if (!at) return null
-    let start = findState(this, tree, 0, at.from, pos), statePos, state
+    let from = undefined
+    let {overrideIndentation} = cx.options
+    if (overrideIndentation) {
+      from = IndentedFrom.get(cx.state)
+      if (from != null && from < pos - 1e4) from = undefined
+    }
+    let start = findState(this, tree, 0, at.from, from ?? pos), statePos, state
     if (start) { state = start.state; statePos = start.pos + 1 }
     else { state = this.streamParser.startState(cx.unit) ; statePos = 0 }
     if (pos - statePos > C.MaxIndentScanDist) return null
     while (statePos < pos) {
       let line = cx.state.doc.lineAt(statePos), end = Math.min(pos, line.to)
       if (line.length) {
-        let stream = new StringStream(line.text, cx.state.tabSize, cx.unit)
+        let indentation = overrideIndentation ? overrideIndentation(line.from) : -1
+        let stream = new StringStream(line.text, cx.state.tabSize, cx.unit, indentation < 0 ? undefined : indentation)
         while (stream.pos < end - line.from)
           readToken(this.streamParser.token, stream, state)
       } else {
@@ -121,8 +130,9 @@ export class StreamLanguage<State> extends Language {
       if (end == pos) break
       statePos = line.to + 1
     }
-    let {text} = cx.lineAt(pos)
-    return this.streamParser.indent(state, /^\s*(.*)/.exec(text)![1], cx)
+    let line = cx.lineAt(pos)
+    if (overrideIndentation && from == null) IndentedFrom.set(cx.state, line.from)
+    return this.streamParser.indent(state, /^\s*(.*)/.exec(line.text)![1], cx)
   }
 
   get allowsNesting() { return false }
