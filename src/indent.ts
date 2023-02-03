@@ -17,7 +17,7 @@ export const indentService = Facet.define<(context: IndentContext, pos: number) 
 export const indentUnit = Facet.define<string, string>({
   combine: values => {
     if (!values.length) return "  "
-    if (!/^(?: +|\t+)$/.test(values[0])) throw new Error("Invalid indent unit: " + JSON.stringify(values[0]))
+    if (!/^(?: +|\t+|　+)$/.test(values[0])) throw new Error("Invalid indent unit: " + JSON.stringify(values[0]))
     return values[0]
   }
 })
