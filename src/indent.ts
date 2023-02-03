@@ -11,14 +11,16 @@ import {syntaxTree} from "./language"
 /// service.
 export const indentService = Facet.define<(context: IndentContext, pos: number) => number | null | undefined>()
 
-/// Facet for overriding the unit by which indentation happens.
-/// Should be a string consisting either entirely of spaces or
-/// entirely of tabs. When not set, this defaults to 2 spaces.
+/// Facet for overriding the unit by which indentation happens. Should
+/// be a string consisting either entirely of the same whitespace
+/// character. When not set, this defaults to 2 spaces.
 export const indentUnit = Facet.define<string, string>({
   combine: values => {
     if (!values.length) return "  "
-    if (!/^(?: +|\t+)$/.test(values[0])) throw new Error("Invalid indent unit: " + JSON.stringify(values[0]))
-    return values[0]
+    let unit = values[0]
+    if (!unit || /\S/.test(unit) || Array.from(unit).some(e => e != unit[0]))
+      throw new Error("Invalid indent unit: " + JSON.stringify(values[0]))
+    return unit
   }
 })
 
@@ -36,12 +38,15 @@ export function getIndentUnit(state: EditorState) {
 /// [`indentUnit`](#language.indentUnit) facet contains
 /// tabs.
 export function indentString(state: EditorState, cols: number) {
-  let result = "", ts = state.tabSize
-  if (state.facet(indentUnit).charCodeAt(0) == 9) while (cols >= ts) {
-    result += "\t"
-    cols -= ts
+  let result = "", ts = state.tabSize, ch = state.facet(indentUnit)[0]
+  if (ch == "\t") {
+    while (cols >= ts) {
+      result += "\t"
+      cols -= ts
+    }
+    ch = " "
   }
-  for (let i = 0; i < cols; i++) result += " "
+  for (let i = 0; i < cols; i++) result += ch
   return result
 }
 

@@ -51,5 +51,14 @@ describe("Indentation", () => {
     let s2 = EditorState.create({extensions: [indentUnit.of("\t"), EditorState.tabSize.of(8)]})
     ist(getIndentUnit(s2), 8)
     ist(indentString(s2, 16), "\t\t")
+    let s3 = EditorState.create({extensions: indentUnit.of("　")})
+    ist(getIndentUnit(s3), 1)
+    ist(indentString(s3, 2), "　　")
+  })
+
+  it("errors for bad indent units", () => {
+    ist.throws(() => EditorState.create({extensions: indentUnit.of("")}), /Invalid indent unit/)
+    ist.throws(() => EditorState.create({extensions: indentUnit.of("\t ")}), /Invalid indent unit/)
+    ist.throws(() => EditorState.create({extensions: indentUnit.of("hello")}), /Invalid indent unit/)
   })
 })
