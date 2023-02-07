@@ -1,3 +1,15 @@
+## 6.5.0 (2023-02-07)
+
+### Bug fixes
+
+Make indentation for stream languages more reliable by having `StringStream.indentation` return overridden indentations from the indent context.
+
+### New features
+
+The `toggleFold` command folds or unfolds depending on whether there's an existing folded range on the current line.
+
+`indentUnit` now accepts any (repeated) whitespace character, not just spaces and tabs.
+
 ## 6.4.0 (2023-01-12)
 
 ### New features
