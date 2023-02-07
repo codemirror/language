@@ -114,6 +114,8 @@ the fold state.
 
 @MatchResult
 
+@bracketMatchingHandle
+
 ### Stream Parser
 
 Stream parsers provide a way to adapt language modes written in the
