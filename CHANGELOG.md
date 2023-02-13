@@ -1,3 +1,9 @@
+## 6.6.0 (2023-02-13)
+
+### New features
+
+Syntax-driven language data queries now support sublanguages, which make it possible to return different data for specific parts of the tree produced by a single language.
+
 ## 6.5.0 (2023-02-07)
 
 ### Bug fixes
