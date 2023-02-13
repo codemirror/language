@@ -1,4 +1,5 @@
-export {language, Language, LRLanguage, defineLanguageFacet, syntaxTree, ensureSyntaxTree, languageDataProp,
+export {language, Language, LRLanguage, Sublanguage, sublanguageProp, defineLanguageFacet,
+        syntaxTree, ensureSyntaxTree, languageDataProp,
         ParseContext, LanguageSupport, LanguageDescription,
         syntaxTreeAvailable, syntaxParserRunning, forceParsing} from "./language"
 

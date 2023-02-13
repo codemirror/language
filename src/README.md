@@ -4,6 +4,10 @@
 
 @defineLanguageFacet
 
+@Sublanguage
+
+@sublanguageProp
+
 @language
 
 @LRLanguage

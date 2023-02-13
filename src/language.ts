@@ -21,6 +21,34 @@ export function defineLanguageFacet(baseData?: {[name: string]: any}) {
   })
 }
 
+/// Some languages need to return different [language
+/// data](#state.EditorState.languageDataAt) for some parts of their
+/// tree. Sublanguages, registered by adding a [node
+/// prop](#language.sublanguageProp) to the language's top syntax
+/// node, provide a mechanism to do this.
+///
+/// (Note that when using nested parsing, where nested syntax is
+/// parsed by a different parser and has its own top node type, you
+/// don't need a sublanguage.)
+export interface Sublanguage {
+  /// Determines whether the data provided by this sublanguage should
+  /// completely replace the regular data or be added to it (with
+  /// higher-precedence). The default is `"extend"`.
+  type?: "replace" | "extend",
+  /// A predicate that returns whether the node at the queried
+  /// position is part of the sublanguage.
+  test: (node: SyntaxNode, state: EditorState) => boolean,
+  /// The language data facet that holds the sublanguage's data.
+  /// You'll want to use
+  /// [`defineLanguageFacet`](#language.defineLanguageFacet) to create
+  /// this.
+  facet: Facet<{[name: string]: any}>
+}
+
+/// Syntax node prop used to register sublangauges. Should be added to
+/// the top level node type for the language.
+export const sublanguageProp = new NodeProp<Sublanguage[]>()
+
 /// A language object manages parsing and per-language
 /// [metadata](#state.EditorState.languageDataAt). Parse data is
 /// managed as a [Lezer](https://lezer.codemirror.net) tree. The class
@@ -59,13 +87,25 @@ export class Language {
     this.parser = parser
     this.extension = [
       language.of(this),
-      EditorState.languageData.of((state, pos, side) => state.facet(languageDataFacetAt(state, pos, side)!))
+      EditorState.languageData.of((state, pos, side) => {
+        let top = topNodeAt(state, pos, side), data = top.type.prop(languageDataProp)
+        if (!data) return []
+        let base = state.facet(data), sub = top.type.prop(sublanguageProp)
+        if (sub) {
+          let innerNode = top.resolve(pos - top.from, side)
+          for (let sublang of sub) if (sublang.test(innerNode, state)) {
+            let data = state.facet(sublang.facet)
+            return sublang.type == "replace" ? data : data.concat(base)
+          }
+        }
+        return base
+      })
     ].concat(extraExtensions)
   }
 
   /// Query whether this language is active at the given position.
   isActiveAt(state: EditorState, pos: number, side: -1 | 0 | 1 = -1) {
-    return languageDataFacetAt(state, pos, side) == this.data
+    return topNodeAt(state, pos, side).type.prop(languageDataProp) == this.data
   }
 
   /// Find the document regions that were parsed using this language.
@@ -113,15 +153,13 @@ export class Language {
   static setState = StateEffect.define<LanguageState>()
 }
 
-function languageDataFacetAt(state: EditorState, pos: number, side: -1 | 0 | 1) {
-  let topLang = state.facet(language)
-  if (!topLang) return null
-  let facet = topLang.data
-  if (topLang.allowsNesting) {
-    for (let node: SyntaxNode | null = syntaxTree(state).topNode; node; node = node.enter(pos, side, IterMode.ExcludeBuffers))
-      facet = node.type.prop(languageDataProp) || facet
+function topNodeAt(state: EditorState, pos: number, side: -1 | 0 | 1) {
+  let topLang = state.facet(language), tree = syntaxTree(state).topNode
+  if (!topLang || topLang.allowsNesting) {
+    for (let node: SyntaxNode | null = tree; node; node = node.enter(pos, side, IterMode.ExcludeBuffers))
+      if (node.type.isTop) tree = node
   }
-  return facet
+  return tree
 }
 
 /// A subclass of [`Language`](#language.Language) for use with Lezer
