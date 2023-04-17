@@ -45,7 +45,7 @@ export interface Sublanguage {
   facet: Facet<{[name: string]: any}>
 }
 
-/// Syntax node prop used to register sublangauges. Should be added to
+/// Syntax node prop used to register sublanguages. Should be added to
 /// the top level node type for the language.
 export const sublanguageProp = new NodeProp<Sublanguage[]>()
 
