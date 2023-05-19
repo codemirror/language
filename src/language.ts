@@ -249,12 +249,15 @@ export function syntaxParserRunning(view: EditorView) {
   return view.plugin(parseWorker)?.isWorking() || false
 }
 
-// Lezer-style Input object for a Text document.
-class DocInput implements Input {
-  cursor: TextIterator
-  cursorPos = 0
-  string = ""
+/// Lezer-style
+/// [`Input`](https://lezer.codemirror.net/docs/ref#common.Input)
+/// object for a [`Text`](#state.Text) object.
+export class DocInput implements Input {
+  private cursor: TextIterator
+  private cursorPos = 0
+  private string = ""
 
+  /// Create an input object for the given document.
   constructor(readonly doc: Text) {
     this.cursor = doc.iter()
   }

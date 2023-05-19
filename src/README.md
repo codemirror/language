@@ -28,6 +28,8 @@
 
 @LanguageDescription
 
+@DocInput
+
 ### Highlighting
 
 @HighlightStyle
