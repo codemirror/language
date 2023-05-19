@@ -1,3 +1,9 @@
+## 6.7.0 (2023-05-19)
+
+### New features
+
+Export `DocInput` class for feeding editor documents to a Lezer parser.
+
 ## 6.6.0 (2023-02-13)
 
 ### New features
