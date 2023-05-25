@@ -34,7 +34,7 @@
     "style-mod": "^4.0.0"
   },
   "devDependencies": {
-    "@codemirror/buildhelper": "^0.1.5",
+    "@codemirror/buildhelper": "^1.0.0",
     "@lezer/javascript": "^1.0.0"
   },
   "repository": {
