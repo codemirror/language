@@ -255,12 +255,18 @@ export class TreeIndentContext extends IndentContext {
   /// so, the line at the start of that node is tried, again skipping
   /// on if it is covered by another such node.
   get baseIndent() {
-    let line = this.state.doc.lineAt(this.node.from)
+    return this.baseIndentFor(this.node)
+  }
+
+  /// Get the indentation for the reference line of the given node
+  /// (see [`baseIndent`](#language.TreeIndentContext.baseIndent)).
+  baseIndentFor(node: SyntaxNode) {
+    let line = this.state.doc.lineAt(node.from)
     // Skip line starts that are covered by a sibling (or cousin, etc)
     for (;;) {
-      let atBreak = this.node.resolve(line.from)
+      let atBreak = node.resolve(line.from)
       while (atBreak.parent && atBreak.parent.from == atBreak.from) atBreak = atBreak.parent
-      if (isParent(atBreak, this.node)) break
+      if (isParent(atBreak, node)) break
       line = this.state.doc.lineAt(atBreak.from)
     }
     return this.lineIndent(line.from)
