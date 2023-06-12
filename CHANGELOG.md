@@ -1,3 +1,9 @@
+## 6.8.0 (2023-06-12)
+
+### New features
+
+The new `baseIndentFor` method in `TreeIndentContext` can be used to find the base indentation for an arbitrary node.
+
 ## 6.7.0 (2023-05-19)
 
 ### New features
