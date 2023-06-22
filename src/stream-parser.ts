@@ -408,7 +408,7 @@ function createTokenType(extra: {[name: string]: Tag}, tagStr: string) {
 }
 
 function docID(data: Facet<{[name: string]: any}>) {
-  let type = NodeType.define({id: typeArray.length, name: "Document", props: [languageDataProp.add(() => data)]})
+  let type = NodeType.define({id: typeArray.length, name: "Document", props: [languageDataProp.add(() => data)], top: true})
   typeArray.push(type)
   return type
 }
