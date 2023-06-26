@@ -64,7 +64,7 @@ export function getIndentation(context: IndentContext | EditorState, pos: number
     if (result !== undefined) return result
   }
   let tree = syntaxTree(context.state)
-  return tree ? syntaxIndentation(context, tree, pos) : null
+  return tree.length >= pos ? syntaxIndentation(context, tree, pos) : null
 }
 
 /// Create a change set that auto-indents all lines touched by the
