@@ -9,7 +9,9 @@ import {language, syntaxTree} from "./language"
 /// the extent of a line, such a function should return a foldable
 /// range that starts on that line (but continues beyond it), if one
 /// can be found.
-export const foldService = Facet.define<(state: EditorState, lineStart: number, lineEnd: number) => ({from: number, to: number} | null)>()
+export const foldService = Facet.define<
+  (state: EditorState, lineStart: number, lineEnd: number) => ({from: number, to: number} | null)
+>()
 
 /// This node prop is used to associate folding information with
 /// syntax node types. Given a syntax node, it should check whether
@@ -99,11 +101,15 @@ export const foldState = StateField.define<DecorationSet>({
   update(folded, tr) {
     folded = folded.map(tr.changes)
     for (let e of tr.effects) {
-      if (e.is(foldEffect) && !foldExists(folded, e.value.from, e.value.to))
-        folded = folded.update({add: [foldWidget.range(e.value.from, e.value.to)]})
-      else if (e.is(unfoldEffect))
+      if (e.is(foldEffect) && !foldExists(folded, e.value.from, e.value.to)) {
+        let {preparePlaceholder} = tr.state.facet(foldConfig)
+        let widget = !preparePlaceholder ? foldWidget :
+          Decoration.replace({widget: new PreparedFoldWidget(preparePlaceholder(tr.state, e.value))})
+        folded = folded.update({add: [widget.range(e.value.from, e.value.to)]})
+      } else if (e.is(unfoldEffect)) {
         folded = folded.update({filter: (from, to) => e.value.from != from || e.value.to != to,
                                 filterFrom: e.value.from, filterTo: e.value.to})
+      }
     }
     // Clear folded ranges that cover the selection head
     if (tr.selection) {
@@ -265,18 +271,27 @@ interface FoldConfig {
   /// position of folded code. The `onclick` argument is the default
   /// click event handler, which toggles folding on the line that
   /// holds the element, and should probably be added as an event
-  /// handler to the returned element.
+  /// handler to the returned element. If
+  /// [`preparePlaceholder`](#language.FoldConfig.preparePlaceholder)
+  /// is given, its result will be passed as 3rd argument. Otherwise,
+  /// this will be null.
   ///
   /// When this option isn't given, the `placeholderText` option will
   /// be used to create the placeholder element.
-  placeholderDOM?: ((view: EditorView, onclick: (event: Event) => void) => HTMLElement) | null,
+  placeholderDOM?: ((view: EditorView, onclick: (event: Event) => void, prepared: any) => HTMLElement) | null,
   /// Text to use as placeholder for folded text. Defaults to `"…"`.
   /// Will be styled with the `"cm-foldPlaceholder"` class.
   placeholderText?: string
+  /// Given a range that is being folded, create a value that
+  /// describes it, to be used by `placeholderDOM` to render a custom
+  /// widget that, for example, indicates something about the folded
+  /// range's size or type.
+  preparePlaceholder?: (state: EditorState, range: {from: number, to: number}) => any
 }
 
 const defaultConfig: Required<FoldConfig> = {
   placeholderDOM: null,
+  preparePlaceholder: null as any,
   placeholderText: "…"
 }
 
@@ -291,25 +306,33 @@ export function codeFolding(config?: FoldConfig): Extension {
   return result
 }
 
-const foldWidget = Decoration.replace({widget: new class extends WidgetType {
-  toDOM(view: EditorView) {
-    let {state} = view, conf = state.facet(foldConfig)
-    let onclick = (event: Event) => {
-      let line = view.lineBlockAt(view.posAtDOM(event.target as HTMLElement))
-      let folded = findFold(view.state, line.from, line.to)
-      if (folded) view.dispatch({effects: unfoldEffect.of(folded)})
-      event.preventDefault()
-    }
-    if (conf.placeholderDOM) return conf.placeholderDOM(view, onclick)
-    let element = document.createElement("span")
-    element.textContent = conf.placeholderText
-    element.setAttribute("aria-label", state.phrase("folded code"))
-    element.title = state.phrase("unfold")
-    element.className = "cm-foldPlaceholder"
-    element.onclick = onclick
-    return element
+function widgetToDOM(view: EditorView, prepared: any) {
+  let {state} = view, conf = state.facet(foldConfig)
+  let onclick = (event: Event) => {
+    let line = view.lineBlockAt(view.posAtDOM(event.target as HTMLElement))
+    let folded = findFold(view.state, line.from, line.to)
+    if (folded) view.dispatch({effects: unfoldEffect.of(folded)})
+    event.preventDefault()
   }
+  if (conf.placeholderDOM) return conf.placeholderDOM(view, onclick, prepared)
+  let element = document.createElement("span")
+  element.textContent = conf.placeholderText
+  element.setAttribute("aria-label", state.phrase("folded code"))
+  element.title = state.phrase("unfold")
+  element.className = "cm-foldPlaceholder"
+  element.onclick = onclick
+  return element
+}
+
+const foldWidget = Decoration.replace({widget: new class extends WidgetType {
+  toDOM(view: EditorView) { return widgetToDOM(view, null) }
 }})
+
+class PreparedFoldWidget extends WidgetType {
+  constructor(readonly value: any) { super() }
+  eq(other: PreparedFoldWidget) { return this.value == other.value }
+  toDOM(view: EditorView) { return widgetToDOM(view, this.value) }
+}
 
 type Handlers = {[event: string]: (view: EditorView, line: BlockInfo, event: Event) => boolean}
 
