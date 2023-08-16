@@ -1,3 +1,13 @@
+## 6.9.0 (2023-08-16)
+
+### Bug fixes
+
+Make `getIndentation` return null, rather than 0, when there is no syntax tree available.
+
+### New features
+
+The new `preparePlaceholder` option to `codeFolding` makes it possible to display contextual information in a folded range placeholder widget.
+
 ## 6.8.0 (2023-06-12)
 
 ### New features
