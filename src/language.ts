@@ -592,7 +592,7 @@ const parseWorker = ViewPlugin.fromClass(class ParseWorker {
     let cx = this.view.state.field(Language.state).context
     if (cx.updateViewport(update.view.viewport) || this.view.viewport.to > cx.treeLen)
       this.scheduleWork()
-    if (update.docChanged) {
+    if (update.docChanged || update.selectionSet) {
       if (this.view.hasFocus) this.chunkBudget += Work.ChangeBonus
       this.scheduleWork()
     }
