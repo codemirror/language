@@ -340,7 +340,7 @@ interface FoldGutterConfig {
   /// A function that creates the DOM element used to indicate a
   /// given line is folded or can be folded. 
   /// When not given, the `openText`/`closeText` option will be used instead.
-  markerDOM?: ((open: boolean) => HTMLElement) | null
+  markerDOM?: ((open: boolean, view: EditorView) => HTMLElement) | null
   /// Text used to indicate that a given line can be folded. 
   /// Defaults to `"⌄"`.
   openText?: string
@@ -369,7 +369,7 @@ class FoldMarker extends GutterMarker {
   eq(other: FoldMarker) { return this.config == other.config && this.open == other.open }
 
   toDOM(view: EditorView) {
-    if (this.config.markerDOM) return this.config.markerDOM(this.open)
+    if (this.config.markerDOM) return this.config.markerDOM(this.open, view)
 
     let span = document.createElement("span")
     span.textContent = this.open ? this.config.openText : this.config.closedText
