@@ -1,4 +1,4 @@
-import {NodeProp, SyntaxNode, Tree} from "@lezer/common"
+import {NodeProp, SyntaxNode, NodeIterator, Tree} from "@lezer/common"
 import {EditorState, Extension, Facet, countColumn, ChangeSpec} from "@codemirror/state"
 import {syntaxTree} from "./language"
 
@@ -195,7 +195,22 @@ export const indentNodeProp = new NodeProp<(context: TreeIndentContext) => numbe
 
 // Compute the indentation for a given position from the syntax tree.
 function syntaxIndentation(cx: IndentContext, ast: Tree, pos: number) {
-  return indentFrom(ast.resolveInner(pos).enterUnfinishedNodesBefore(pos), pos, cx)
+  let stack = ast.resolveStack(pos)
+  let inner = stack.node.enterUnfinishedNodesBefore(pos)
+  if (inner != stack.node) {
+    let add = []
+    for (let cur = inner; cur != stack.node; cur = cur.parent!) add.push(cur)
+    for (let i = add.length - 1; i >= 0; i--) stack = {node: add[i], next: stack}
+  }
+  return indentFor(stack, cx, pos)
+}
+
+function indentFor(stack: NodeIterator | null, cx: IndentContext, pos: number): number | null {
+  for (let cur: NodeIterator | null = stack; cur; cur = cur.next) {
+    let strategy = indentStrategy(cur.node)
+    if (strategy) return strategy(TreeIndentContext.create(cx, pos, cur))
+  }
+  return 0
 }
 
 function ignoreClosed(cx: TreeIndentContext) {
@@ -213,15 +228,6 @@ function indentStrategy(tree: SyntaxNode): ((context: TreeIndentContext) => numb
   return tree.parent == null ? topIndent : null
 }
 
-function indentFrom(node: SyntaxNode | null, pos: number, base: IndentContext) {
-  for (; node; node = node.parent) {
-    let strategy = indentStrategy(node)
-    if (strategy) return strategy(TreeIndentContext.create(base, pos, node))
-  }
-  return null
-}
-
-
 function topIndent() { return 0 }
 
 /// Objects of this type provide context information and helper
@@ -231,16 +237,20 @@ export class TreeIndentContext extends IndentContext {
     private base: IndentContext,
     /// The position at which indentation is being computed.
     readonly pos: number,
-    /// The syntax tree node to which the indentation strategy
-    /// applies.
-    readonly node: SyntaxNode
+    /// @internal
+    readonly context: NodeIterator
   ) {
     super(base.state, base.options)
   }
 
+  /// The syntax tree node to which the indentation strategy
+  /// applies.
+  get node(): SyntaxNode { return this.context.node }
+
+
   /// @internal
-  static create(base: IndentContext, pos: number, node: SyntaxNode) {
-    return new TreeIndentContext(base, pos, node)
+  static create(base: IndentContext, pos: number, context: NodeIterator) {
+    return new TreeIndentContext(base, pos, context)
   }
 
   /// Get the text directly after `this.pos`, either the entire line
@@ -275,8 +285,7 @@ export class TreeIndentContext extends IndentContext {
   /// Continue looking for indentations in the node's parent nodes,
   /// and return the result of that.
   continue() {
-    let parent = this.node.parent
-    return parent ? indentFrom(parent, this.pos, this.base) : 0
+    return indentFor(this.context.next, this.base, this.pos)
   }
 }
 
