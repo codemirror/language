@@ -1,3 +1,11 @@
+## 6.9.1 (2023-09-20)
+
+### Bug fixes
+
+Indentation now works a lot better in mixed-language documents that interleave the languages in a complex way.
+
+Code folding is now able to pick the right foldable syntax node when the line end falls in a mixed-parsing language that doesn't match the target node.
+
 ## 6.9.0 (2023-08-16)
 
 ### Bug fixes
