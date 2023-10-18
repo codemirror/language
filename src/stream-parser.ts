@@ -1,5 +1,5 @@
 import {Tree, Input, TreeFragment, NodeType, NodeSet, SyntaxNode, PartialParse, Parser, NodeProp} from "@lezer/common"
-import {Tag, tags, styleTags} from "@lezer/highlight"
+import {Tag, tags as highlightTags, styleTags} from "@lezer/highlight"
 import {EditorState, Facet} from "@codemirror/state"
 import {Language, defineLanguageFacet, languageDataProp, syntaxTree, ParseContext} from "./language"
 import {IndentContext, indentService, getIndentUnit} from "./indent"
@@ -19,11 +19,13 @@ export interface StreamParser<State> {
   /// Read one token, advancing the stream past it, and returning a
   /// string indicating the token's style tag—either the name of one
   /// of the tags in
-  /// [`tags`](https://lezer.codemirror.net/docs/ref#highlight.tags),
-  /// or such a name suffixed by one or more tag
+  /// [`tags`](https://lezer.codemirror.net/docs/ref#highlight.tags)
+  /// or [`tokenTable`](#language.StreamParser.tokenTable), or such a
+  /// name suffixed by one or more tag
   /// [modifier](https://lezer.codemirror.net/docs/ref#highlight.Tag^defineModifier)
   /// names, separated by periods. For example `"keyword"` or
-  /// "`variableName.constant"`.
+  /// "`variableName.constant"`, or a space-separated set of such
+  /// token types.
   ///
   /// It is okay to return a zero-length token, but only if that
   /// updates the state so that the next call will return a non-empty
@@ -43,8 +45,8 @@ export interface StreamParser<State> {
   languageData?: {[name: string]: any}
   /// Extra tokens to use in this parser. When the tokenizer returns a
   /// token name that exists as a property in this object, the
-  /// corresponding tag will be assigned to the token.
-  tokenTable?: {[name: string]: Tag}
+  /// corresponding tags will be assigned to the token.
+  tokenTable?: {[name: string]: Tag | readonly Tag[]}
 }
 
 function fullParser<State>(spec: StreamParser<State>): Required<StreamParser<State>> {
@@ -367,7 +369,7 @@ for (let [legacyName, name] of [
 class TokenTable {
   table: {[name: string]: number} = Object.assign(Object.create(null), defaultTable)
 
-  constructor(readonly extra: {[name: string]: Tag}) {}
+  constructor(readonly extra: {[name: string]: Tag | readonly Tag[]}) {}
 
   resolve(tag: string) {
     return !tag ? 0 : this.table[tag] || (this.table[tag] = createTokenType(this.extra, tag))
@@ -382,26 +384,30 @@ function warnForPart(part: string, msg: string) {
   console.warn(msg)
 }
 
-function createTokenType(extra: {[name: string]: Tag}, tagStr: string) {
-  let tag = null
-  for (let part of tagStr.split(".")) {
-    let value = (extra[part] || (tags as any)[part]) as Tag | ((t: Tag) => Tag) | undefined
-    if (!value) {
-      warnForPart(part, `Unknown highlighting tag ${part}`)
-    } else if (typeof value == "function") {
-      if (!tag) warnForPart(part, `Modifier ${part} used at start of tag`)
-      else tag = value(tag) as Tag
-    } else {
-      if (tag) warnForPart(part, `Tag ${part} used as modifier`)
-      else tag = value as Tag
+function createTokenType(extra: {[name: string]: Tag | readonly Tag[]}, tagStr: string) {
+  let tags = []
+  for (let name of tagStr.split(" ")) {
+    let found: readonly Tag[] = []
+    for (let part of name.split(".")) {
+      let value = (extra[part] || (highlightTags as any)[part]) as Tag | readonly Tag[] | ((t: Tag) => Tag) | undefined
+      if (!value) {
+        warnForPart(part, `Unknown highlighting tag ${part}`)
+      } else if (typeof value == "function") {
+        if (!found.length) warnForPart(part, `Modifier ${part} used at start of tag`)
+        else found = found.map(value) as Tag[]
+      } else {
+        if (found.length) warnForPart(part, `Tag ${part} used as modifier`)
+        else found = Array.isArray(value) ? value : [value]
+      }
     }
+    for (let tag of found) tags.push(tag)
   }
-  if (!tag) return 0
+  if (!tags.length) return 0
 
   let name = tagStr.replace(/ /g, "_"), type = NodeType.define({
     id: typeArray.length,
     name,
-    props: [styleTags({[name]: tag})]
+    props: [styleTags({[name]: tags})]
   })
   typeArray.push(type)
   return type.id
