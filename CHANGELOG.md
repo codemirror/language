@@ -1,3 +1,9 @@
+## 6.9.2 (2023-10-24)
+
+### Bug fixes
+
+Allow `StreamParser` tokens get multiple highlighting tags.
+
 ## 6.9.1 (2023-09-20)
 
 ### Bug fixes
