@@ -350,6 +350,9 @@ const typeArray: NodeType[] = [NodeType.none]
 const nodeSet = new NodeSet(typeArray)
 const warned: string[] = []
 
+// Cache of node types by name and tags
+const byTag: {[key: string]: NodeType} = Object.create(null)
+
 const defaultTable: {[name: string]: number} = Object.create(null)
 for (let [legacyName, name] of [
   ["variable", "variableName"],
@@ -404,7 +407,10 @@ function createTokenType(extra: {[name: string]: Tag | readonly Tag[]}, tagStr: 
   }
   if (!tags.length) return 0
 
-  let name = tagStr.replace(/ /g, "_"), type = NodeType.define({
+  let name = tagStr.replace(/ /g, "_"), key = name + " " + tags.map(t => (t as any).id)
+  let known = byTag[key]
+  if (known) return known.id
+  let type = byTag[key] = NodeType.define({
     id: typeArray.length,
     name,
     props: [styleTags({[name]: tags})]
