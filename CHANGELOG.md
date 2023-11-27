@@ -1,3 +1,9 @@
+## 6.9.3 (2023-11-27)
+
+### Bug fixes
+
+Fix an issue in `StreamLanguage` where it ran out of node type ids if you repeatedly redefined a language with the same token table.
+
 ## 6.9.2 (2023-10-24)
 
 ### Bug fixes
