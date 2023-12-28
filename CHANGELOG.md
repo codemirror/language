@@ -1,3 +1,9 @@
+## 6.10.0 (2023-12-28)
+
+### New features
+
+The new `bidiIsolates` extension can be used to wrap syntactic elements where this is appropriate in an element that isolates their text direction, avoiding weird ordering of neutral characters on direction boundaries.
+
 ## 6.9.3 (2023-11-27)
 
 ### Bug fixes
