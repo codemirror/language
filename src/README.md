@@ -42,6 +42,8 @@
 
 @highlightingFor
 
+@bidiIsolates
+
 ### Folding
 
 These exports provide commands and other functionality related to code

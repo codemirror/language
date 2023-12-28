@@ -16,3 +16,5 @@ export {bracketMatching, Config, matchBrackets, MatchResult, bracketMatchingHand
 export {StreamLanguage, StreamParser} from "./stream-parser"
 
 export {StringStream} from "./stringstream"
+
+export {bidiIsolates} from "./isolate"
