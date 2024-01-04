@@ -51,7 +51,7 @@ const isolateMarks = ViewPlugin.fromClass(class {
       view.state.facet(EditorView.perLineTextDirection)
     this.hasRTL = !this.always && textHasRTL(view.state.doc)
     this.tree = syntaxTree(view.state)
-    this.decorations = buildDeco(view, this.tree, this.always)
+    this.decorations = this.always || this.hasRTL ? buildDeco(view, this.tree, this.always) : Decoration.none
   }
 
   update(update: ViewUpdate) {
