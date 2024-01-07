@@ -1,3 +1,9 @@
+## 6.10.1 (2024-01-07)
+
+### Bug fixes
+
+Fix ESM/bundler module resolution in Typescript by upgrading dependency @lezer/highlight
+
 ## 6.10.0 (2023-12-28)
 
 ### New features
