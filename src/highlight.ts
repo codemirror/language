@@ -154,22 +154,27 @@ export interface TagStyle {
 
 class TreeHighlighter {
   decorations: DecorationSet
+  decoratedTo: number
   tree: Tree
   markCache: {[cls: string]: Decoration} = Object.create(null)
 
   constructor(view: EditorView) {
     this.tree = syntaxTree(view.state)
     this.decorations = this.buildDeco(view, getHighlighters(view.state))
+    this.decoratedTo = view.viewport.to
   }
 
   update(update: ViewUpdate) {
     let tree = syntaxTree(update.state), highlighters = getHighlighters(update.state)
     let styleChange = highlighters != getHighlighters(update.startState)
-    if (tree.length < update.view.viewport.to && !styleChange && tree.type == this.tree.type) {
+    let {viewport} = update.view, decoratedToMapped = update.changes.mapPos(this.decoratedTo, 1)
+    if (tree.length < viewport.to && !styleChange && tree.type == this.tree.type && decoratedToMapped >= viewport.to) {
       this.decorations = this.decorations.map(update.changes)
+      this.decoratedTo = decoratedToMapped
     } else if (tree != this.tree || update.viewportChanged || styleChange) {
       this.tree = tree
       this.decorations = this.buildDeco(update.view, highlighters)
+      this.decoratedTo = viewport.to
     }
   }
 
