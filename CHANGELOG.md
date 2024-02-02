@@ -1,3 +1,9 @@
+## 6.10.1 (2024-02-02)
+
+### Bug fixes
+
+Fix an issue where, when a lot of code is visible in the initial editor, the bottom bit of code is shown without highlighting for one frame.
+
 ## 6.10.0 (2023-12-28)
 
 ### New features
