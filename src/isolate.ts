@@ -99,8 +99,12 @@ function buildDeco(view: EditorView, tree: Tree, always: boolean) {
 function clipRTLLines(ranges: readonly {from: number, to: number}[], doc: Text) {
   let cur = doc.iter(), pos = 0, result: {from: number, to: number}[] = [], last = null
   for (let {from, to} of ranges) {
-    if (from != pos) {
-      if (pos < from) cur.next(from - pos)
+    if (last && last.to > from) {
+      from = last.to
+      if (from >= to) continue
+    }
+    if (pos + cur.value.length < from) {
+      cur.next(from - (pos + cur.value.length))
       pos = from
     }
     for (;;) {
@@ -109,7 +113,7 @@ function clipRTLLines(ranges: readonly {from: number, to: number}[], doc: Text) 
         if (last && last.to > start - 10) last.to = Math.min(to, end)
         else result.push(last = {from: start, to: Math.min(to, end)})
       }
-      if (pos >= to) break
+      if (end >= to) break
       pos = end
       cur.next()
     }
