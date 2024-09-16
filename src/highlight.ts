@@ -19,7 +19,7 @@ export class HighlightStyle implements Highlighter {
   readonly themeType: "dark" | "light" | undefined
 
   readonly style: (tags: readonly Tag[]) => string | null
-  readonly scope: ((type: NodeType) => boolean) | undefined
+  readonly scope?: (type: NodeType) => boolean
 
   private constructor(
     /// The tag styles used to create this highlight style.
