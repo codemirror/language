@@ -307,8 +307,11 @@ function bracketedAligned(context: TreeIndentContext) {
   for (let pos = openToken.to;;) {
     let next = tree.childAfter(pos)
     if (!next || next == last) return null
-    if (!next.type.isSkipped)
-      return next.from < lineEnd ? openToken : null
+    if (!next.type.isSkipped) {
+      if (next.from >= lineEnd) return null
+      let space = /^ */.exec(openLine.text.slice(openToken.to - openLine.from))![0].length
+      return {from: openToken.from, to: openToken.to + space}
+    }
     pos = next.to
   }
 }
