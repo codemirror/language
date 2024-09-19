@@ -1,3 +1,11 @@
+## 6.10.3 (2024-09-19)
+
+### Bug fixes
+
+Fix a TypeScript error when using `HighlightStyle` with the `exactOptionalPropertyTypes` typechecking option enabled.
+
+Make `delimitedIndent` align to spaces after the opening token.
+
 ## 6.10.2 (2024-06-03)
 
 ### Bug fixes
