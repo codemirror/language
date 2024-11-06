@@ -278,7 +278,8 @@ class Parse<State> implements PartialParse {
     while (this.ranges[this.rangeIndex].to < this.parsedPos) this.rangeIndex++
   }
 
-  emitToken(id: number, from: number, to: number, size: number, offset: number) {
+  emitToken(id: number, from: number, to: number, offset: number) {
+    let size = 4
     if (this.ranges.length > 1) {
       offset = this.skipGapsTo(from, offset, 1)
       from += offset
@@ -287,7 +288,11 @@ class Parse<State> implements PartialParse {
       to += offset
       size += this.chunk.length - len0
     }
-    this.chunk.push(id, from, to, size)
+    let last = this.chunk.length - 4
+    if (size == 4 && last >= 0 && this.chunk[last] == id && this.chunk[last + 2] == from)
+      this.chunk[last + 2] = to
+    else
+      this.chunk.push(id, from, to, size)
     return offset
   }
 
@@ -301,7 +306,7 @@ class Parse<State> implements PartialParse {
         let token = readToken(streamParser.token, stream, this.state)
         if (token)
           offset = this.emitToken(this.lang.tokenTable.resolve(token), this.parsedPos + stream.start,
-                                  this.parsedPos + stream.pos, 4, offset)
+                                  this.parsedPos + stream.pos, offset)
         if (stream.start > C.MaxLineLength) break
       }
     }
