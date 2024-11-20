@@ -1,8 +1,8 @@
-import {Tree, Input, TreeFragment, NodeType, NodeSet, SyntaxNode, PartialParse, Parser, NodeProp} from "@lezer/common"
+import {Tree, Input, TreeFragment, NodeType, NodeSet, PartialParse, Parser, NodeProp} from "@lezer/common"
 import {Tag, tags as highlightTags, styleTags} from "@lezer/highlight"
 import {EditorState, Facet} from "@codemirror/state"
-import {Language, defineLanguageFacet, languageDataProp, syntaxTree, ParseContext} from "./language"
-import {IndentContext, indentService, getIndentUnit} from "./indent"
+import {Language, defineLanguageFacet, languageDataProp, ParseContext} from "./language"
+import {TreeIndentContext, IndentContext, indentNodeProp, getIndentUnit} from "./indent"
 import {StringStream} from "./stringstream"
 
 export {StringStream}
@@ -94,8 +94,8 @@ export class StreamLanguage<State> extends Language {
         return new Parse(self, input, fragments, ranges)
       }
     }
-    super(data, impl, [indentService.of((cx, pos) => this.getIndent(cx, pos))], parser.name)
-    this.topNode = docID(data)
+    super(data, impl, [], parser.name)
+    this.topNode = docID(data, this)
     self = this
     this.streamParser = p
     this.stateAfter = new NodeProp<State>({perNode: true})
@@ -105,22 +105,20 @@ export class StreamLanguage<State> extends Language {
   /// Define a stream language.
   static define<State>(spec: StreamParser<State>) { return new StreamLanguage(spec) }
 
-  private getIndent(cx: IndentContext, pos: number) {
-    let tree = syntaxTree(cx.state), at: SyntaxNode | null = tree.resolve(pos)
-    while (at && at.type != this.topNode) at = at.parent
-    if (!at) return null
+  /// @internal
+  getIndent(cx: TreeIndentContext) {
     let from = undefined
     let {overrideIndentation} = cx.options
     if (overrideIndentation) {
       from = IndentedFrom.get(cx.state)
-      if (from != null && from < pos - 1e4) from = undefined
+      if (from != null && from < cx.pos - 1e4) from = undefined
     }
-    let start = findState(this, tree, 0, at.from, from ?? pos), statePos, state
+    let start = findState(this, cx.node.tree!, 0, cx.node.from, from ?? cx.pos), statePos, state
     if (start) { state = start.state; statePos = start.pos + 1 }
     else { state = this.streamParser.startState(cx.unit) ; statePos = 0 }
-    if (pos - statePos > C.MaxIndentScanDist) return null
-    while (statePos < pos) {
-      let line = cx.state.doc.lineAt(statePos), end = Math.min(pos, line.to)
+    if (cx.pos - statePos > C.MaxIndentScanDist) return null
+    while (statePos < cx.pos) {
+      let line = cx.state.doc.lineAt(statePos), end = Math.min(cx.pos, line.to)
       if (line.length) {
         let indentation = overrideIndentation ? overrideIndentation(line.from) : -1
         let stream = new StringStream(line.text, cx.state.tabSize, cx.unit, indentation < 0 ? undefined : indentation)
@@ -129,10 +127,10 @@ export class StreamLanguage<State> extends Language {
       } else {
         this.streamParser.blankLine(state, cx.unit)
       }
-      if (end == pos) break
+      if (end == cx.pos) break
       statePos = line.to + 1
     }
-    let line = cx.lineAt(pos)
+    let line = cx.lineAt(cx.pos)
     if (overrideIndentation && from == null) IndentedFrom.set(cx.state, line.from)
     return this.streamParser.indent(state, /^\s*(.*)/.exec(line.text)![1], cx)
   }
@@ -424,8 +422,11 @@ function createTokenType(extra: {[name: string]: Tag | readonly Tag[]}, tagStr: 
   return type.id
 }
 
-function docID(data: Facet<{[name: string]: any}>) {
-  let type = NodeType.define({id: typeArray.length, name: "Document", props: [languageDataProp.add(() => data)], top: true})
+function docID(data: Facet<{[name: string]: any}>, lang: StreamLanguage<unknown>) {
+  let type = NodeType.define({id: typeArray.length, name: "Document", props: [
+    languageDataProp.add(() => data),
+    indentNodeProp.add(() => cx => lang.getIndent(cx))
+  ], top: true})
   typeArray.push(type)
   return type
 }
