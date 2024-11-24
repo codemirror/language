@@ -1,3 +1,13 @@
+## 6.10.4 (2024-11-24)
+
+### Bug fixes
+
+Join adjacent tokens of the same type into a single token in .
+
+Call stream language indent functions even when the language is used as a nested parser.
+
+Fix a crash in `StreamParser` when a parse was resumed with different input ranges.
+
 ## 6.10.3 (2024-09-19)
 
 ### Bug fixes
