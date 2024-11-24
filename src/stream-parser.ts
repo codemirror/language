@@ -166,11 +166,11 @@ function cutTree(lang: StreamLanguage<unknown>, tree: Tree, from: number, to: nu
 }
 
 function findStartInFragments<State>(lang: StreamLanguage<State>, fragments: readonly TreeFragment[],
-                                     startPos: number, editorState?: EditorState) {
+                                     startPos: number, endPos: number, editorState?: EditorState) {
   for (let f of fragments) {
     let from = f.from + (f.openStart ? 25 : 0), to = f.to - (f.openEnd ? 25 : 0)
     let found = from <= startPos && to > startPos && findState(lang, f.tree, 0 - f.offset, startPos, to), tree
-    if (found && (tree = cutTree(lang, f.tree, startPos + f.offset, found.pos + f.offset, false)))
+    if (found && found.pos <= endPos && (tree = cutTree(lang, f.tree, startPos + f.offset, found.pos + f.offset, false)))
       return {state: found.state, tree}
   }
   return {state: lang.streamParser.startState(editorState ? getIndentUnit(editorState) : 4), tree: Tree.empty}
@@ -201,7 +201,7 @@ class Parse<State> implements PartialParse {
               readonly ranges: readonly {from: number, to: number}[]) {
     this.to = ranges[ranges.length - 1].to
     let context = ParseContext.get(), from = ranges[0].from
-    let {state, tree} = findStartInFragments(lang, fragments, from, context?.state)
+    let {state, tree} = findStartInFragments(lang, fragments, from, ranges[ranges.length - 1].to, context?.state)
     this.state = state
     this.parsedPos = this.chunkStart = from + tree.length
     for (let i = 0; i < tree.children.length; i++) {
