@@ -1,3 +1,9 @@
+## 6.10.5 (2024-11-27)
+
+### Bug fixes
+
+Fix an issue where a `StreamLanguage` could get confused when trying to reuse existing parse data when the parsed range changed.
+
 ## 6.10.4 (2024-11-24)
 
 ### Bug fixes
