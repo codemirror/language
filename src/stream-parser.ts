@@ -153,7 +153,7 @@ function findState<State>(
 
 function cutTree(lang: StreamLanguage<unknown>, tree: Tree, from: number, to: number, inside: boolean): Tree | null {
   if (inside && from <= 0 && to >= tree.length) return tree
-  if (!inside && tree.type == lang.topNode) inside = true
+  if (!inside && from == 0 && tree.type == lang.topNode) inside = true
   for (let i = tree.children.length - 1; i >= 0; i--) {
     let pos = tree.positions[i], child = tree.children[i], inner
     if (pos < to && child instanceof Tree) {
