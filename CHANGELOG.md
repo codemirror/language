@@ -1,3 +1,9 @@
+## 6.10.6 (2024-11-29)
+
+### Bug fixes
+
+Fix a crash in `StreamLanguage` when the input range is entirely before the editor viewport.
+
 ## 6.10.5 (2024-11-27)
 
 ### Bug fixes
