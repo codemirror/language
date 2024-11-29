@@ -201,14 +201,15 @@ class Parse<State> implements PartialParse {
               readonly ranges: readonly {from: number, to: number}[]) {
     this.to = ranges[ranges.length - 1].to
     let context = ParseContext.get(), from = ranges[0].from
-    let {state, tree} = findStartInFragments(lang, fragments, from, ranges[ranges.length - 1].to, context?.state)
+    let {state, tree} = findStartInFragments(lang, fragments, from, this.to, context?.state)
     this.state = state
     this.parsedPos = this.chunkStart = from + tree.length
     for (let i = 0; i < tree.children.length; i++) {
       this.chunks.push(tree.children[i] as Tree)
       this.chunkPos.push(tree.positions[i])
     }
-    if (context && this.parsedPos < context.viewport.from - C.MaxDistanceBeforeViewport) {
+    if (context && this.parsedPos < context.viewport.from - C.MaxDistanceBeforeViewport &&
+        ranges.some(r => r.from <= context!.viewport.from && r.to >= context!.viewport.from)) {
       this.state = this.lang.streamParser.startState(getIndentUnit(context.state))
       context.skipUntilInView(this.parsedPos, context.viewport.from)
       this.parsedPos = context.viewport.from
