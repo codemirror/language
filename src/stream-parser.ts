@@ -115,7 +115,7 @@ export class StreamLanguage<State> extends Language {
     }
     let start = findState(this, cx.node.tree!, 0, cx.node.from, from ?? cx.pos), statePos, state
     if (start) { state = start.state; statePos = start.pos + 1 }
-    else { state = this.streamParser.startState(cx.unit) ; statePos = 0 }
+    else { state = this.streamParser.startState(cx.unit) ; statePos = cx.node.from }
     if (cx.pos - statePos > C.MaxIndentScanDist) return null
     while (statePos < cx.pos) {
       let line = cx.state.doc.lineAt(statePos), end = Math.min(cx.pos, line.to)
