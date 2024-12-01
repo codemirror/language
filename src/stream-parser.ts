@@ -113,7 +113,7 @@ export class StreamLanguage<State> extends Language {
       from = IndentedFrom.get(cx.state)
       if (from != null && from < cx.pos - 1e4) from = undefined
     }
-    let start = findState(this, cx.node.tree!, 0, cx.node.from, from ?? cx.pos), statePos, state
+    let start = findState(this, cx.node.tree!, cx.node.from, cx.node.from, from ?? cx.pos), statePos, state
     if (start) { state = start.state; statePos = start.pos + 1 }
     else { state = this.streamParser.startState(cx.unit) ; statePos = cx.node.from }
     if (cx.pos - statePos > C.MaxIndentScanDist) return null
