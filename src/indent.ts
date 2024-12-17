@@ -196,7 +196,7 @@ export const indentNodeProp = new NodeProp<(context: TreeIndentContext) => numbe
 // Compute the indentation for a given position from the syntax tree.
 function syntaxIndentation(cx: IndentContext, ast: Tree, pos: number) {
   let stack = ast.resolveStack(pos)
-  let inner = stack.node.enterUnfinishedNodesBefore(pos)
+  let inner = ast.resolveInner(pos, -1).resolve(pos, 0).enterUnfinishedNodesBefore(pos)
   if (inner != stack.node) {
     let add = []
     for (let cur = inner; cur != stack.node; cur = cur.parent!) add.push(cur)
