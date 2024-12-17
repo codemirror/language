@@ -1,3 +1,11 @@
+## 6.10.7 (2024-12-17)
+
+### Bug fixes
+
+Fix an issue where indentation for a stream language would fail to work when the parse covered only part of the document, far from the start.
+
+Make sure the inner mode gets a chance to indent when indenting right at the end of a nested language section.
+
 ## 6.10.6 (2024-11-29)
 
 ### Bug fixes
