@@ -1,3 +1,9 @@
+## 6.10.8 (2024-12-23)
+
+### Bug fixes
+
+Fix a regression introduced 6.10.7 that caused indention to sometimes crash on nested language boundaries.
+
 ## 6.10.7 (2024-12-17)
 
 ### Bug fixes
