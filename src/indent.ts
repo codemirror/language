@@ -199,7 +199,8 @@ function syntaxIndentation(cx: IndentContext, ast: Tree, pos: number) {
   let inner = ast.resolveInner(pos, -1).resolve(pos, 0).enterUnfinishedNodesBefore(pos)
   if (inner != stack.node) {
     let add = []
-    for (let cur = inner; cur != stack.node; cur = cur.parent!) add.push(cur)
+    for (let cur = inner; cur && !(cur.from == stack.node.from && cur.type == stack.node.type); cur = cur.parent!)
+      add.push(cur)
     for (let i = add.length - 1; i >= 0; i--) stack = {node: add[i], next: stack}
   }
   return indentFor(stack, cx, pos)
