@@ -47,6 +47,9 @@ export interface StreamParser<State> {
   /// token name that exists as a property in this object, the
   /// corresponding tags will be assigned to the token.
   tokenTable?: {[name: string]: Tag | readonly Tag[]}
+  /// By default, adjacent tokens of the same type are merged in the
+  /// output tree. Set this to false to disable that.
+  mergeTokens?: boolean
 }
 
 function fullParser<State>(spec: StreamParser<State>): Required<StreamParser<State>> {
@@ -58,7 +61,8 @@ function fullParser<State>(spec: StreamParser<State>): Required<StreamParser<Sta
     copyState: spec.copyState || defaultCopyState,
     indent: spec.indent || (() => null),
     languageData: spec.languageData || {},
-    tokenTable: spec.tokenTable || noTokens
+    tokenTable: spec.tokenTable || noTokens,
+    mergeTokens: spec.mergeTokens !== false
   }
 }
 
@@ -288,7 +292,8 @@ class Parse<State> implements PartialParse {
       size += this.chunk.length - len0
     }
     let last = this.chunk.length - 4
-    if (size == 4 && last >= 0 && this.chunk[last] == id && this.chunk[last + 2] == from)
+    if (this.lang.streamParser.mergeTokens && size == 4 && last >= 0 &&
+        this.chunk[last] == id && this.chunk[last + 2] == from)
       this.chunk[last + 2] = to
     else
       this.chunk.push(id, from, to, size)
