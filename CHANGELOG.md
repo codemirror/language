@@ -1,3 +1,9 @@
+## 6.11.0 (2025-03-13)
+
+### New features
+
+Stream parsers now support a `mergeTokens` option that can be used to turn off automatic merging of adjacent tokens.
+
 ## 6.10.8 (2024-12-23)
 
 ### Bug fixes
