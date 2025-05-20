@@ -12,8 +12,8 @@ import {syntaxTree} from "./language"
 export const indentService = Facet.define<(context: IndentContext, pos: number) => number | null | undefined>()
 
 /// Facet for overriding the unit by which indentation happens. Should
-/// be a string consisting either entirely of the same whitespace
-/// character. When not set, this defaults to 2 spaces.
+/// be a string consisting entirely of the same whitespace character.
+/// When not set, this defaults to 2 spaces.
 export const indentUnit = Facet.define<string, string>({
   combine: values => {
     if (!values.length) return "  "
