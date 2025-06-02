@@ -1,3 +1,9 @@
+## 6.11.1 (2025-06-02)
+
+### Bug fixes
+
+Fix an issue where indentation would sometimes miss nodes in mixed-language situations.
+
 ## 6.11.0 (2025-03-13)
 
 ### New features
