@@ -100,6 +100,8 @@ export const foldState = StateField.define<DecorationSet>({
     return Decoration.none
   },
   update(folded, tr) {
+    if (tr.isUserEvent("delete"))
+      tr.changes.iterChangedRanges((fromA, toA) => folded = clearTouchedFolds(folded, fromA, toA))
     folded = folded.map(tr.changes)
     for (let e of tr.effects) {
       if (e.is(foldEffect) && !foldExists(folded, e.value.from, e.value.to)) {
@@ -113,15 +115,7 @@ export const foldState = StateField.define<DecorationSet>({
       }
     }
     // Clear folded ranges that cover the selection head
-    if (tr.selection) {
-      let onSelection = false, {head} = tr.selection.main
-      folded.between(head, head, (a, b) => { if (a < head && b > head) onSelection = true })
-      if (onSelection) folded = folded.update({
-        filterFrom: head,
-        filterTo: head,
-        filter: (a, b) => b <= head || a >= head
-      })
-    }
+    if (tr.selection) folded = clearTouchedFolds(folded, tr.selection.main.head)
     return folded
   },
   provide: f => EditorView.decorations.from(f),
@@ -141,6 +135,16 @@ export const foldState = StateField.define<DecorationSet>({
     return Decoration.set(ranges, true)
   }
 })
+
+function clearTouchedFolds(folded: DecorationSet, from: number, to = from) {
+  let touched = false
+  folded.between(from, to, (a, b) => { if (a < to && b > from) touched = true })
+  return !touched ? folded : folded.update({
+    filterFrom: from,
+    filterTo: to,
+    filter: (a, b) => a >= to || b <= from
+  })
+}
 
 /// Get a [range set](#state.RangeSet) containing the folded ranges
 /// in the given state.
