@@ -1,3 +1,9 @@
+## 6.11.2 (2025-06-27)
+
+### Bug fixes
+
+Make sure folded ranges open when backspacing or deleting into them.
+
 ## 6.11.1 (2025-06-02)
 
 ### Bug fixes
