@@ -3,7 +3,7 @@ import {combineConfig, EditorState, StateEffect, ChangeDesc, Facet, StateField, 
         RangeSet, RangeSetBuilder} from "@codemirror/state"
 import {EditorView, BlockInfo, Command, Decoration, DecorationSet, WidgetType,
         KeyBinding, ViewPlugin, ViewUpdate, gutter, GutterMarker} from "@codemirror/view"
-import {language, syntaxTree} from "./language"
+import {language, syntaxTree, ensureSyntaxTree} from "./language"
 
 /// A facet that registers a code folding service. When called with
 /// the extent of a line, such a function should return a foldable
@@ -27,9 +27,9 @@ export function foldInside(node: SyntaxNode): {from: number, to: number} | null 
   return first && first.to < last!.from ? {from: first.to, to: last!.type.isError ? node.to : last!.from} : null
 }
 
-function syntaxFolding(state: EditorState, start: number, end: number) {
-  let tree = syntaxTree(state)
-  if (tree.length < end) return null
+function syntaxFolding(state: EditorState, start: number, end: number, ensure?: boolean) {
+  let tree = ensure ? ensureSyntaxTree(state, end, Infinity) : syntaxTree(state)
+  if (!tree || tree.length < end) return null
   let stack = tree.resolveStack(end, 1)
   let found: null | {from: number, to: number} = null
   for (let iter: NodeIterator | null = stack; iter; iter = iter.next) {
@@ -56,12 +56,12 @@ function isUnfinished(node: SyntaxNode) {
 /// a result, tries to query the [fold node
 /// prop](#language.foldNodeProp) of syntax nodes that cover the end
 /// of the line.
-export function foldable(state: EditorState, lineStart: number, lineEnd: number) {
+export function foldable(state: EditorState, lineStart: number, lineEnd: number, ensure?:boolean) {
   for (let service of state.facet(foldService)) {
     let result = service(state, lineStart, lineEnd)
     if (result) return result
   }
-  return syntaxFolding(state, lineStart, lineEnd)
+  return syntaxFolding(state, lineStart, lineEnd, ensure)
 }
 
 type DocRange = {from: number, to: number}
