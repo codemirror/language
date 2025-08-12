@@ -181,7 +181,7 @@ function findStartInFragments<State>(lang: StreamLanguage<State>, fragments: rea
 }
 
 const enum C {
-  ChunkSize = 2048,
+  ChunkSize = 512,
   MaxDistanceBeforeViewport = 1e5,
   MaxIndentScanDist = 1e4,
   MaxLineLength = 1e4
