@@ -1,6 +1,6 @@
 {
   "name": "@codemirror/language",
-  "version": "6.11.2",
+  "version": "6.11.3",
   "description": "Language support infrastructure for the CodeMirror code editor",
   "scripts": {
     "test": "cm-runtests",

@@ -1,3 +1,9 @@
+## 6.11.3 (2025-08-15)
+
+### Bug fixes
+
+Make the stream parser user 4 times smaller chunks to reduce the amount of re-parsed code on changes.
+
 ## 6.11.2 (2025-06-27)
 
 ### Bug fixes
