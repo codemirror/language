@@ -5,7 +5,7 @@ import {EditorView, ViewPlugin, ViewUpdate, Decoration, DecorationSet} from "@co
 import {EditorState, Prec, Facet, Extension, RangeSetBuilder} from "@codemirror/state"
 import {syntaxTree, Language, languageDataProp} from "./language"
 
-/// A highlight style associates CSS styles with higlighting
+/// A highlight style associates CSS styles with highlighting
 /// [tags](https://lezer.codemirror.net/docs/ref#highlight.Tag).
 export class HighlightStyle implements Highlighter {
   /// A style module holding the CSS rules for this highlight style.
