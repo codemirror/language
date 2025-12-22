@@ -1,3 +1,9 @@
+## 6.12.0 (2025-12-22)
+
+### New features
+
+`LRLanguage.reconfigure` now supports changing the language data associated with the language.
+
 ## 6.11.3 (2025-08-15)
 
 ### Bug fixes
