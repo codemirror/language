@@ -1,8 +1,8 @@
-## 6.12.0 (2025-12-22)
+## 6.12.1 (2025-12-22)
 
-### New features
+### Bug fixes
 
-`LRLanguage.reconfigure` now supports changing the language data associated with the language.
+Improve finding inner language in syntax tree when the nested parse has been marked as bracketed.
 
 ## 6.11.3 (2025-08-15)
 
