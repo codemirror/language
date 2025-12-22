@@ -156,7 +156,7 @@ export class Language {
 function topNodeAt(state: EditorState, pos: number, side: -1 | 0 | 1) {
   let topLang = state.facet(language), tree = syntaxTree(state).topNode
   if (!topLang || topLang.allowsNesting) {
-    for (let node: SyntaxNode | null = tree; node; node = node.enter(pos, side, IterMode.ExcludeBuffers))
+    for (let node: SyntaxNode | null = tree; node; node = node.enter(pos, side, IterMode.ExcludeBuffers | IterMode.EnterBracketed))
       if (node.type.isTop) tree = node
   }
   return tree
