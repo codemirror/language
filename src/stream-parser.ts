@@ -91,14 +91,14 @@ export class StreamLanguage<State> extends Language {
   topNode: NodeType
 
   private constructor(parser: StreamParser<State>) {
-    let data = defineLanguageFacet(parser.languageData)
+    let data = defineLanguageFacet()
     let p = fullParser(parser), self: StreamLanguage<State>
     let impl = new class extends Parser {
       createParse(input: Input, fragments: readonly TreeFragment[], ranges: readonly {from: number, to: number}[]) {
         return new Parse(self, input, fragments, ranges)
       }
     }
-    super(data, impl, [], parser.name)
+    super(data, impl, parser.languageData ? [data.of(parser.languageData)] : [], parser.name)
     this.topNode = docID(data, this)
     self = this
     this.streamParser = p

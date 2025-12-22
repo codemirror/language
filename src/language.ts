@@ -166,8 +166,11 @@ function topNodeAt(state: EditorState, pos: number, side: -1 | 0 | 1) {
 /// [LR parsers](https://lezer.codemirror.net/docs/ref#lr.LRParser)
 /// parsers.
 export class LRLanguage extends Language {
-  private constructor(data: Facet<{[name: string]: any}>, readonly parser: LRParser, name?: string) {
-    super(data, parser, [], name)
+  private constructor(data: Facet<{[name: string]: any}>,
+                      readonly parser: LRParser,
+                      private languageData: {[name: string]: any} | null,
+                      name?: string) {
+    super(data, parser, languageData ? [data.of(languageData)] : [], name)
   }
 
   /// Define a language from a parser.
@@ -182,16 +185,29 @@ export class LRLanguage extends Language {
     /// to register for this language.
     languageData?: {[name: string]: any}
   }) {
-    let data = defineLanguageFacet(spec.languageData)
+    let data = defineLanguageFacet()
     return new LRLanguage(data, spec.parser.configure({
       props: [languageDataProp.add(type => type.isTop ? data : undefined)]
-    }), spec.name)
+    }), spec.languageData || null, spec.name)
   }
 
   /// Create a new instance of this language with a reconfigured
-  /// version of its parser and optionally a new name.
-  configure(options: ParserConfig, name?: string): LRLanguage {
-    return new LRLanguage(this.data, this.parser.configure(options), name || this.name)
+  /// version of its parser, language data, and name.
+  ///
+  /// When `languageData` is given, any property set to `undefined`
+  /// in it will be removed from the language's
+  /// [data](#state.EditorState.languageDataAt), any other property
+  /// is added.
+  configure(options: ParserConfig & {languageData?: {[name: string]: any}}, name?: string): LRLanguage {
+    let {languageData} = this
+    if (options.languageData) {
+      languageData = {}
+      for (let prop in options.languageData)
+        if (options.languageData[prop] !== undefined) languageData[prop] = options.languageData[prop]
+      for (let prop in this.languageData)
+        if (!(prop in options.languageData)) languageData[prop] = this.languageData[prop]
+    }
+    return new LRLanguage(this.data, this.parser.configure(options), languageData, name || this.name)
   }
 
   get allowsNesting() { return this.parser.hasWrappers() }
