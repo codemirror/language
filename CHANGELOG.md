@@ -1,3 +1,11 @@
+## 6.12.2 (2026-02-25)
+
+### Bug fixes
+
+Make sure brackets are highlighted in the initial editor state.
+
+Pause bracket matching updates during composition, to avoid disrupting Mobile Safari's fragile composition handling.
+
 ## 6.12.1 (2025-12-22)
 
 ### Bug fixes
