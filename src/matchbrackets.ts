@@ -54,23 +54,26 @@ function defaultRenderMatch(match: MatchResult) {
   return decorations
 }
 
+function bracketDeco(state: EditorState) {
+  let decorations: Range<Decoration>[] = []
+  let config = state.facet(bracketMatchingConfig)
+  for (let range of state.selection.ranges) {
+    if (!range.empty) continue
+    let match = matchBrackets(state, range.head, -1, config)
+      || (range.head > 0 && matchBrackets(state, range.head - 1, 1, config))
+      || (config.afterCursor &&
+        (matchBrackets(state, range.head, 1, config) ||
+          (range.head < state.doc.length && matchBrackets(state, range.head + 1, -1, config))))
+    if (match)
+      decorations = decorations.concat(config.renderMatch(match, state))
+  }
+  return Decoration.set(decorations, true)
+}
+
 const bracketMatchingState = StateField.define<DecorationSet>({
-  create() { return Decoration.none },
+  create(state) { return bracketDeco(state) },
   update(deco, tr) {
-    if (!tr.docChanged && !tr.selection) return deco
-    let decorations: Range<Decoration>[] = []
-    let config = tr.state.facet(bracketMatchingConfig)
-    for (let range of tr.state.selection.ranges) {
-      if (!range.empty) continue
-      let match = matchBrackets(tr.state, range.head, -1, config)
-        || (range.head > 0 && matchBrackets(tr.state, range.head - 1, 1, config))
-        || (config.afterCursor &&
-            (matchBrackets(tr.state, range.head, 1, config) ||
-             (range.head < tr.state.doc.length && matchBrackets(tr.state, range.head + 1, -1, config))))
-      if (match)
-        decorations = decorations.concat(config.renderMatch(match, tr.state))
-    }
-    return Decoration.set(decorations, true)
+    return tr.docChanged || tr.selection ? bracketDeco(tr.state) : deco
   },
   provide: f => EditorView.decorations.from(f)
 })
