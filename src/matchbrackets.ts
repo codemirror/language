@@ -1,6 +1,6 @@
-import {combineConfig, EditorState, Facet, StateField, Extension, Range} from "@codemirror/state"
+import {combineConfig, EditorState, Facet, Extension, Range} from "@codemirror/state"
 import {syntaxTree} from "./language"
-import {EditorView, Decoration, DecorationSet} from "@codemirror/view"
+import {EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate} from "@codemirror/view"
 import {Tree, SyntaxNode, SyntaxNodeRef, NodeType, NodeProp} from "@lezer/common"
 
 export interface Config {
@@ -70,16 +70,29 @@ function bracketDeco(state: EditorState) {
   return Decoration.set(decorations, true)
 }
 
-const bracketMatchingState = StateField.define<DecorationSet>({
-  create(state) { return bracketDeco(state) },
-  update(deco, tr) {
-    return tr.docChanged || tr.selection ? bracketDeco(tr.state) : deco
-  },
-  provide: f => EditorView.decorations.from(f)
+const bracketMatcher = ViewPlugin.fromClass(class {
+  decorations: DecorationSet
+  paused = false
+  constructor(view: EditorView) {
+    this.decorations = bracketDeco(view.state)
+  }
+  update(update: ViewUpdate) {
+    if (update.docChanged || update.selectionSet || this.paused) {
+      if (update.view.composing) {
+        this.decorations = this.decorations.map(update.changes)
+        this.paused = true
+      } else {
+        this.decorations = bracketDeco(update.state)
+        this.paused = false
+      }
+    }
+  }
+}, {
+  decorations: v => v.decorations
 })
 
 const bracketMatchingUnique = [
-  bracketMatchingState,
+  bracketMatcher,
   baseTheme
 ]
 
