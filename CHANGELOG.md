@@ -1,3 +1,9 @@
+## 6.12.3 (2026-03-25)
+
+### Bug fixes
+
+Fix a crash in `bracketMatching` when composing at end of document.
+
 ## 6.12.2 (2026-02-25)
 
 ### Bug fixes
