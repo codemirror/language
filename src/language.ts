@@ -163,8 +163,7 @@ function topNodeAt(state: EditorState, pos: number, side: -1 | 0 | 1) {
 }
 
 /// A subclass of [`Language`](#language.Language) for use with Lezer
-/// [LR parsers](https://lezer.codemirror.net/docs/ref#lr.LRParser)
-/// parsers.
+/// [LR parsers](https://lezer.codemirror.net/docs/ref#lr.LRParser).
 export class LRLanguage extends Language {
   private constructor(data: Facet<{[name: string]: any}>, readonly parser: LRParser, name?: string) {
     super(data, parser, [], name)
