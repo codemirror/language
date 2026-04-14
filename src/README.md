@@ -128,7 +128,7 @@ the fold state.
 
 Stream parsers provide a way to adapt language modes written in the
 CodeMirror 5 style (see
-[@codemirror/legacy-modes](https://github.com/codemirror/legacy-modes))
+[@codemirror/legacy-modes](https://code.haverbeke.berlin/codemirror/legacy-modes))
 to the `Language` interface.
 
 @StreamLanguage

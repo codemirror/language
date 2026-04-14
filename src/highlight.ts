@@ -55,7 +55,7 @@ export class HighlightStyle implements Highlighter {
   /// or array of tags in their `tag` property, and either a single
   /// `class` property providing a static CSS class (for highlighter
   /// that rely on external styling), or a
-  /// [`style-mod`](https://github.com/marijnh/style-mod#documentation)-style
+  /// [`style-mod`](https://code.haverbeke.berlin/marijn/style-mod#documentation)-style
   /// set of CSS properties (which define the styling for those tags).
   ///
   /// The CSS rules created for a highlighter will be emitted in the
@@ -147,7 +147,7 @@ export interface TagStyle {
   class?: string,
   /// Any further properties (if `class` isn't given) will be
   /// interpreted as in style objects given to
-  /// [style-mod](https://github.com/marijnh/style-mod#documentation).
+  /// [style-mod](https://code.haverbeke.berlin/marijn/style-mod#documentation).
   /// (The type here is `any` because of TypeScript limitations.)
   [styleProperty: string]: any
 }
